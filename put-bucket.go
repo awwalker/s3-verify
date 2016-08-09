@@ -140,16 +140,16 @@ func verifyBodyPutBucket(resBody io.Reader, expectedError ErrorResponse) error {
 			return err
 		}
 		return nil
-	} else {
-		body, err := ioutil.ReadAll(resBody)
-		if err != nil {
-			return err
-		}
-		// There is no body returned by a Put Bucket request.
-		if string(body) != "" {
-			err := fmt.Errorf("Unexpected Body: %v", string(body))
-			return err
-		}
+	}
+	// Read the body to make sure it is empty.
+	body, err := ioutil.ReadAll(resBody)
+	if err != nil {
+		return err
+	}
+	// There is no body returned by a Put Bucket request.
+	if string(body) != "" {
+		err := fmt.Errorf("Unexpected Body: %v", string(body))
+		return err
 	}
 	return nil
 }

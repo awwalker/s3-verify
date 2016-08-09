@@ -104,7 +104,7 @@ func verifyBodyPutObject(resBody io.Reader) error {
 	return nil
 }
 
-// verifyHeaderPutObject - Verify that the header returned matches waht is expected.
+// verifyHeaderPutObject - Verify that the header returned matches what is expected.
 func verifyHeaderPutObject(header http.Header) error {
 	if err := verifyStandardHeaders(header); err != nil {
 		return err

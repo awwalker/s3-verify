@@ -92,7 +92,7 @@ func validateBucket(config ServerConfig, bucketName string) error {
 	// Validate the buckets name as being created by s3verify.
 	bucketNameParts := strings.Split(bucketName, "-")
 	if bucketNameParts[0] != "s3verify" {
-		err := fmt.Errorf("%s is not an s3verify created bucket. See s3verify --help.", bucketName)
+		err := fmt.Errorf("%s is not an s3verify created bucket. See s3verify --help", bucketName)
 		return err
 	}
 	validBucket := BucketInfo{

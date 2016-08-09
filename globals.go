@@ -26,11 +26,10 @@ import (
 )
 
 var (
-	globalVerbose                    = false
-	globalDefaultRegion              = "us-east-1"
-	globalTotalNumTest               = 0
-	globalRequestPoolSize            = 7 // The maximum number of requests to be sent at once.
-	globalRandom          *rand.Rand = nil
+	globalVerbose       = false
+	globalDefaultRegion = "us-east-1"
+	globalTotalNumTest  = 0
+	globalRandom        *rand.Rand
 )
 
 // lockedRandSource provides protected rand source, implements rand.Source interface.

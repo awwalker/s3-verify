@@ -155,21 +155,3 @@ func ErrInvalidArgument(message string) error {
 		RequestID: "minio",
 	}
 }
-
-// ErrInvalidBucketName - Invalid bucket name response.
-func ErrInvalidBucketName(message string) error {
-	return ErrorResponse{
-		Code:      "InvalidBucketName",
-		Message:   message,
-		RequestID: "minio",
-	}
-}
-
-// ErrInvalidObjectName - Invalid object name response.
-func ErrInvalidObjectName(message string) error {
-	return ErrorResponse{
-		Code:      "NoSuchKey",
-		Message:   message,
-		RequestID: "minio",
-	}
-}

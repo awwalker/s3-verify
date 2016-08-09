@@ -34,6 +34,7 @@ const MaxJitter = 1.0
 // NoJitter disables the use of jitter for randomizing the exponential backoff time
 const NoJitter = 0.0
 
+// TCPretry holds all the errors that can and should be retried.
 var TCPretry = []string{"i/o timeout", "net/http: TLS handshake timeout", "connection reset by peer", "read: operation timed out"}
 
 // newRetryTimer creates a timer with exponentially increasing delays

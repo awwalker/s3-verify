@@ -54,7 +54,7 @@ type ObjectInfo struct {
 	UploadID string // To be set only for multipart uploaded objects.
 }
 
-// A container for ObjectInfo structs to allow sorting.
+// ObjectInfos - A container for ObjectInfo structs to allow sorting.
 type ObjectInfos []ObjectInfo
 
 // Return the len of a list of ObjectInfo.
@@ -72,28 +72,7 @@ func (o ObjectInfos) Swap(i, j int) {
 	o[i], o[j] = o[j], o[i]
 }
 
-// objectInfoChannel a channel for concurrent object level operations.
-type objectInfoChannel struct {
-	objInfo ObjectInfo
-	err     error
-	index   int
-}
-
-// partChannel a channel for concurrent multipart upload part operations.
-type partChannel struct {
-	objPart objectPart
-	err     error
-	index   int
-}
-
-// multiUploadInitChannel a channel for concurrent multipart initiate upload operations.
-type multiUploadInitChannel struct {
-	uploadID string
-	err      error
-	index    int
-}
-
-// Container for a Multipart Objects information.
+// ObjectMultipartInfo - Container for a Multipart Objects information.
 type ObjectMultipartInfo struct {
 	// Date and time at which the multipart upload was initiated.
 	Initiated time.Time `type:"timestamp" timestampFormat:"iso8601"`

@@ -74,7 +74,7 @@ func verifyStatusHeadObject(respStatusCode, expectedStatusCode int) error {
 	return nil
 }
 
-// verifyBodyHeadObject - Verify that the body recieved is empty.
+// verifyBodyHeadObject - Verify that the body received is empty.
 func verifyBodyHeadObject(resBody io.Reader) error {
 	body, err := ioutil.ReadAll(resBody)
 	if err != nil {

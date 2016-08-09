@@ -35,7 +35,7 @@ func xmlDecoder(body io.Reader, v interface{}) error {
 }
 
 // sum256 calculate sha256 sum for an input byte array.
-func Sum256(data []byte) []byte {
+func sum256(data []byte) []byte {
 	hash := sha256.New()
 	hash.Write(data)
 	return hash.Sum(nil)

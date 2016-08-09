@@ -88,21 +88,20 @@ func verifyBodyCopyObjectIfUnModifiedSince(resBody io.Reader, expectedError Erro
 			return err
 		}
 		return nil
-	} else {
-		// Verify the body returned is a copyobject result.
-		copyObjResult := copyObjectResult{}
-		err := xmlDecoder(resBody, &copyObjResult)
-		if err != nil {
-			body, errR := ioutil.ReadAll(resBody)
-			if errR != nil {
-				return errR
-			}
-			err = fmt.Errorf("Unexpected Body Received: %v", string(body))
-
-			return err
-		}
-		return nil
 	}
+	// Verify the body returned is a copyobject result.
+	copyObjResult := copyObjectResult{}
+	err := xmlDecoder(resBody, &copyObjResult)
+	if err != nil {
+		body, errR := ioutil.ReadAll(resBody)
+		if errR != nil {
+			return errR
+		}
+		err = fmt.Errorf("Unexpected Body Received: %v", string(body))
+
+		return err
+	}
+	return nil
 }
 
 // verifyHeaderCopyObjectIfUnModifiedSince - verify the header returned matches what is expected.

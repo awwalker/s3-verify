@@ -87,7 +87,7 @@ func verifyBodyGetObjectIfNoneMatch(resBody io.Reader, expectedBody []byte) erro
 	if err != nil {
 		return err
 	}
-	if !bytes.Equal(body, expectedBody) { // If the request does not go through an empty body is recieved.
+	if !bytes.Equal(body, expectedBody) { // If the request does not go through an empty body is received.
 		err := fmt.Errorf("Unexpected Body Recieved: wanted %v, got %v", string(expectedBody), string(body))
 		return err
 	}

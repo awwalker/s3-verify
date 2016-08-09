@@ -56,7 +56,7 @@ EXAMPLES:
 		$ s3verify --access YOUR_ACCESS_KEY --secret YOUR_SECRET_KEY --url https://s3.amazonaws.com --region us-west-1
 `
 
-// Define all mainXXX tests to be of this form.
+// APItest - Define all mainXXX tests to be of this form.
 type APItest struct {
 	Test     func(ServerConfig, int) bool
 	Extended bool // Extended tests will only be invoked at the users request.

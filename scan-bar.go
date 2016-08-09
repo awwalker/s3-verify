@@ -51,7 +51,6 @@ type scanBarFunc func(string)
 // scanBarFactory returns a progress bar function to report URL scanning.
 func scanBarFactory() scanBarFunc {
 	prevLineSize := 0
-	prevMessage := ""
 	termWidth, e := pb.GetTerminalWidth()
 	if e != nil {
 		console.Fatalln("Unable to get terminal size. Please use --quiet option.")
@@ -59,10 +58,6 @@ func scanBarFactory() scanBarFunc {
 
 	return func(message string) {
 		scanPrefix := fmt.Sprintf("%s", message)
-		eraseLen := prevLineSize
-		if eraseLen < 1 {
-			eraseLen = 0
-		}
 		padding := messageWidth - len([]rune(scanPrefix))
 
 		message = fixateScanBar(message, termWidth-len([]rune(scanPrefix))-1)
@@ -72,7 +67,6 @@ func scanBarFactory() scanBarFunc {
 			console.PrintC("\r")
 		}
 		console.PrintC(barText + " \b ") // Remove only the cursor from the text.
-		prevMessage = message
 		prevLineSize = len([]rune(barText))
 	}
 }

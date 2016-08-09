@@ -25,6 +25,8 @@ import (
 	"github.com/minio/mc/pkg/httptracer"
 )
 
+// ServerConfig - container for all the user passed server info
+// and a reusable http.Client
 type ServerConfig struct {
 	Access   string
 	Secret   string

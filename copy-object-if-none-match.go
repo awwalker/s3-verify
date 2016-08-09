@@ -85,13 +85,13 @@ func verifyBodyCopyObjectIfNoneMatch(resBody io.Reader, expectedError ErrorRespo
 			return err
 		}
 		return nil
-	} else { // Successful copy expected.
-		copyObjRes := copyObjectResult{}
-		if err := xmlDecoder(resBody, &copyObjRes); err != nil {
-			return err
-		}
-		return nil
 	}
+	// Successful copy expected.
+	copyObjRes := copyObjectResult{}
+	if err := xmlDecoder(resBody, &copyObjRes); err != nil {
+		return err
+	}
+	return nil
 }
 
 // verifyHeaderCopyIfNoneMatch - Verify that the header returned matches what is expected.

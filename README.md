@@ -61,7 +61,7 @@ Use s3verify to check the AWS S3 V4 compatibility of the Minio test server (http
 $ s3verify -a YOUR_ACCESS_KEY -s YOUR_SECRET_KEY https://play.minio.io:9000 
 ```
 
-Use s3verify to check the AWS S3 V4 compatability of the Minio test server with all APIs.
+Use s3verify to check the AWS S3 V4 compatibility of the Minio test server with all APIs.
 ```
 $ s3verify -a YOUR_ACCESS_KEY -s YOUR_SECERT_KEY https://play.minio.io:9000 --extended
 ```
