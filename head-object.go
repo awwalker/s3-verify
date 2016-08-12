@@ -123,8 +123,8 @@ func mainHeadObject(config ServerConfig, curTest int) bool {
 			return false
 		}
 		// If the verification is valid then set the ETag, Size, and LastModified.
-		// Remove the odd double quotes from ETag in the beginning and end.
-		eTag := canonicalizeETag(res.Header.Get("ETag"))
+		// No need to canonicalize ETags because they will come back uncanonicalized every time.
+		eTag := res.Header.Get("ETag")
 		date, err := time.Parse(http.TimeFormat, res.Header.Get("Last-Modified")) // This will never error out because it has already been verified.
 		if err != nil {
 			printMessage(message, err)
@@ -145,18 +145,3 @@ func mainHeadObject(config ServerConfig, curTest int) bool {
 	printMessage(message, nil)
 	return true
 }
-
-// TODO: I THINK THESE CAN BE REDUCED TOO JUST NEED TO VERIFY.
-// mainHeadObjectPrepared - entry point for HeadObject test with --prepare used.
-// func mainHeadObjectPrepared(config ServerConfig, curTest int) bool {
-// 	// Run on s3verify created buckets.
-// 	bucketName := s3verifyBuckets[0].Name
-// 	return mainHeadObject(config, curTest, bucketName, s3verifyObjects)
-// }
-//
-// // mainHeadObjectUnPrepared - entry point for HeadObject test without --prepare used.
-// func mainHeadObjectUnPrepared(config ServerConfig, curTest int) bool {
-// 	// Needs to only run on s3verify created objects.
-// 	bucketName := s3verifyBuckets[0].Name
-// 	return mainHeadObject(config, curTest, bucketName, s3verifyObjects)
-// }

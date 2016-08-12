@@ -105,6 +105,9 @@ func verifyBodyListObjectsV2(resBody io.Reader, expectedList listBucketV2Result)
 			len(receivedList.Contents), len(receivedList.CommonPrefixes))
 		return err
 	}
+	if err := verifyObjectsListObjects(receivedList.Contents, expectedList.Contents); err != nil {
+		return err
+	}
 	return nil
 }
 

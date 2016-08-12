@@ -80,6 +80,24 @@ func verifyStatusListObjectsV1(respStatusCode, expectedStatusCode int) error {
 	return nil
 }
 
+// verifyObjectsListObjects - verify that the objects returned in a listobjects request match what is expected.
+func verifyObjectsListObjects(receivedContents []ObjectInfo, expectedContents []ObjectInfo) error {
+	for i, expectedObject := range expectedContents {
+		receivedObject := receivedContents[i]
+		if receivedObject.ETag != expectedObject.ETag {
+			err := fmt.Errorf("Incorrect ETag Received: wanted %s, got %s", expectedObject.ETag, receivedObject.ETag)
+			return err
+		} else if receivedObject.LastModified != expectedObject.LastModified {
+			err := fmt.Errorf("Incorrect LastModified Received: wanted %v, got %v", expectedObject.LastModified, receivedObject.LastModified)
+			return err
+		} else if receivedObject.Key != expectedObject.Key {
+			err := fmt.Errorf("Incorrect Key Received: wanted %s, got %s", expectedObject.Key, receivedObject.Key)
+			return err
+		}
+	}
+	return nil
+}
+
 // verifyBodyListObjectsV1 - verify the body returned matches what is expected.
 func verifyBodyListObjectsV1(resBody io.Reader, expectedList listBucketResult) error {
 	receivedList := listBucketResult{}
@@ -95,6 +113,9 @@ func verifyBodyListObjectsV1(resBody io.Reader, expectedList listBucketResult) e
 		err := fmt.Errorf("Incorrect Number of Objects Listed: wanted %d objects and %d prefixes, got %d objects and %d prefixes",
 			len(expectedList.Contents), len(expectedList.CommonPrefixes),
 			len(receivedList.Contents), len(receivedList.CommonPrefixes))
+		return err
+	}
+	if err := verifyObjectsListObjects(receivedList.Contents, expectedList.Contents); err != nil {
 		return err
 	}
 	return nil

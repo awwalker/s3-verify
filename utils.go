@@ -98,13 +98,6 @@ func xmlDecoder(body io.Reader, v interface{}) error {
 	return d.Decode(v)
 }
 
-// canonicalizeETag - removes the odd double quotes from ETag in the beginning and end.
-func canonicalizeETag(headerETag string) string {
-	headerETag = strings.TrimPrefix(headerETag, "\"")
-	headerETag = strings.TrimSuffix(headerETag, "\"")
-	return headerETag
-}
-
 // closeResponse close non nil response with any response Body.
 // convenient wrapper to drain any remaining data on response body.
 //

@@ -59,6 +59,40 @@ var preparedTests = []APItest{
 		Critical: false, // This object is not needed for future tests.
 	},
 
+	// Tests for HeadBucket API.
+	APItest{
+		Test:     mainHeadBucket,
+		Extended: false, // HeadBucket is not an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+
+	// Tests for HeadObject API.
+	APItest{
+		Test:     mainHeadObject,
+		Extended: false, // HeadObject is not an extended API.
+		Critical: true,  // This test affects future tests and must pass.
+	},
+	APItest{
+		Test:     mainHeadObjectIfModifiedSince,
+		Extended: true,  // HeadObject with if-modified-since header is an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+	APItest{
+		Test:     mainHeadObjectIfUnModifiedSince,
+		Extended: true,  // HeadObject with if-unmodified-since header is an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+	APItest{
+		Test:     mainHeadObjectIfMatch,
+		Extended: true,  // HeadObject with if-match header is an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+	APItest{
+		Test:     mainHeadObjectIfNoneMatch,
+		Extended: true,  // HeadObject with if-none-match header is an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+
 	// Tests for ListBuckets API.
 	APItest{
 		Test:     mainListBuckets,
@@ -108,40 +142,6 @@ var preparedTests = []APItest{
 		Test:     mainAbortMultipartUpload,
 		Extended: false, // Abort Multipart test must be run even without extended flag being set.
 		Critical: false, // Abort Multipart test can fail without affecting other tests.
-	},
-
-	// Tests for HeadBucket API.
-	APItest{
-		Test:     mainHeadBucket,
-		Extended: false, // HeadBucket is not an extended API.
-		Critical: false, // This test does not affect future tests.
-	},
-
-	// Tests for HeadObject API.
-	APItest{
-		Test:     mainHeadObject,
-		Extended: false, // HeadObject is not an extended API.
-		Critical: true,  // This test affects future tests and must pass.
-	},
-	APItest{
-		Test:     mainHeadObjectIfModifiedSince,
-		Extended: true,  // HeadObject with if-modified-since header is an extended API.
-		Critical: false, // This test does not affect future tests.
-	},
-	APItest{
-		Test:     mainHeadObjectIfUnModifiedSince,
-		Extended: true,  // HeadObject with if-unmodified-since header is an extended API.
-		Critical: false, // This test does not affect future tests.
-	},
-	APItest{
-		Test:     mainHeadObjectIfMatch,
-		Extended: true,  // HeadObject with if-match header is an extended API.
-		Critical: false, // This test does not affect future tests.
-	},
-	APItest{
-		Test:     mainHeadObjectIfNoneMatch,
-		Extended: true,  // HeadObject with if-none-match header is an extended API.
-		Critical: false, // This test does not affect future tests.
 	},
 
 	// Tests for CopyObject API.
@@ -255,6 +255,40 @@ var unpreparedTests = []APItest{
 		Critical: true,  // This object is necessary for future tests.
 	},
 
+	// Tests for HeadBucket API.
+	APItest{
+		Test:     mainHeadBucket,
+		Extended: false, // HeadBucket is not an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+
+	// Tests for HeadObject API.
+	APItest{
+		Test:     mainHeadObject,
+		Extended: false, // HeadObject is not an extended API.
+		Critical: true,  // This test affects future tests and must pass.
+	},
+	APItest{
+		Test:     mainHeadObjectIfModifiedSince,
+		Extended: true,  // HeadObject with if-modified-since header is an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+	APItest{
+		Test:     mainHeadObjectIfUnModifiedSince,
+		Extended: true,  // HeadObject with if-unmodified-since header is an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+	APItest{
+		Test:     mainHeadObjectIfMatch,
+		Extended: true,  // HeadObject with if-match header is an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+	APItest{
+		Test:     mainHeadObjectIfNoneMatch,
+		Extended: true,  // HeadObject with if-none-match header is an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+
 	// Tests for ListBuckets API.
 	APItest{
 		Test:     mainListBuckets,
@@ -304,40 +338,6 @@ var unpreparedTests = []APItest{
 		Test:     mainAbortMultipartUpload,
 		Extended: false, // Abort Multipart test must be run even without extended flag being set.
 		Critical: false, // Abort Multipart test can fail without affecting other tests.
-	},
-
-	// Tests for HeadBucket API.
-	APItest{
-		Test:     mainHeadBucket,
-		Extended: false, // HeadBucket is not an extended API.
-		Critical: false, // This test does not affect future tests.
-	},
-
-	// Tests for HeadObject API.
-	APItest{
-		Test:     mainHeadObject,
-		Extended: false, // HeadObject is not an extended API.
-		Critical: true,  // This test affects future tests and must pass.
-	},
-	APItest{
-		Test:     mainHeadObjectIfModifiedSince,
-		Extended: true,  // HeadObject with if-modified-since header is an extended API.
-		Critical: false, // This test does not affect future tests.
-	},
-	APItest{
-		Test:     mainHeadObjectIfUnModifiedSince,
-		Extended: true,  // HeadObject with if-unmodified-since header is an extended API.
-		Critical: false, // This test does not affect future tests.
-	},
-	APItest{
-		Test:     mainHeadObjectIfMatch,
-		Extended: true,  // HeadObject with if-match header is an extended API.
-		Critical: false, // This test does not affect future tests.
-	},
-	APItest{
-		Test:     mainHeadObjectIfNoneMatch,
-		Extended: true,  // HeadObject with if-none-match header is an extended API.
-		Critical: false, // This test does not affect future tests.
 	},
 
 	// Tests for CopyObject API.
