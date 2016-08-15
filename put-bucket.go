@@ -23,9 +23,8 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
-	"time"
+	"strconv"
 )
 
 var (
@@ -177,7 +176,7 @@ func mainPutBucket(config ServerConfig, curTest int) bool {
 	// Two new buckets are created on the same host regardless of whether or not the test has been prepared.
 	for i := 0; i < 2; i++ {
 		validBucket := BucketInfo{
-			Name: randString(60, rand.NewSource(time.Now().UnixNano()), "s3verify"),
+			Name: "s3verify-" + globalSuffix + strconv.Itoa(i),
 		}
 		// Spin the scanBar
 		scanBar(message)

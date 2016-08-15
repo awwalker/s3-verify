@@ -44,7 +44,7 @@ func cleanObjects(config ServerConfig, bucketName string) error {
 	defer close(doneCh)
 
 	// Only remove s3verify created objects.
-	objectCh := client.ListObjects(bucketName, "s3verify-", false, doneCh)
+	objectCh := client.ListObjects(bucketName, "s3verify/", true, doneCh)
 	for object := range objectCh {
 		// Spin scanBar
 		scanBar(message)
@@ -80,5 +80,16 @@ func cleanBucket(config ServerConfig, bucketName string) error {
 		return err
 	}
 	printMessage(message, nil)
+	return nil
+}
+
+// cleanS3verify - purges the given bucketName of objects then removes the bucket.
+func cleanS3verify(config ServerConfig, bucketName string) error {
+	if err := cleanObjects(config, bucketName); err != nil {
+		return err
+	}
+	if err := cleanBucket(config, bucketName); err != nil {
+		return err
+	}
 	return nil
 }

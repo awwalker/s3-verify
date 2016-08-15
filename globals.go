@@ -26,10 +26,11 @@ import (
 )
 
 var (
-	globalVerbose       = false
-	globalDefaultRegion = "us-east-1"
-	globalTotalNumTest  = 0
-	globalRandom        *rand.Rand
+	globalVerbose       bool          // Used to decide whether or not http traces will be printed.
+	globalDefaultRegion = "us-east-1" // Default all aws requests to us-east-1 unless told otherwise.
+	globalTotalNumTest  int           // The total number of tests being run.
+	globalRandom        *rand.Rand    // A global random seed used by retry code.
+	globalSuffix        string        // The suffix to append to all s3verify created objects and buckets.
 )
 
 // lockedRandSource provides protected rand source, implements rand.Source interface.
@@ -56,7 +57,7 @@ func (r *lockedRandSource) Seed(seed int64) {
 }
 
 // Separate out context.
-func setGlobals(verbose bool, numTests int) {
+func setGlobals(verbose bool, numTests int, suffix string) {
 	globalTotalNumTest = numTests
 	globalVerbose = verbose
 	if globalVerbose {
@@ -64,12 +65,14 @@ func setGlobals(verbose bool, numTests int) {
 		console.DebugPrint = true
 	}
 	globalRandom = rand.New(&lockedRandSource{src: rand.NewSource(time.Now().UTC().UnixNano())})
+	globalSuffix = suffix
 }
 
 // Set any global flags here.
 func setGlobalsFromContext(ctx *cli.Context) error {
 	verbose := ctx.Bool("verbose") || ctx.GlobalBool("verbose")
 	numTests := 0
+	// Calculate the total number of tests being run.
 	if ctx.Bool("extended") || ctx.GlobalBool("extended") {
 		numTests = len(unpreparedTests)
 	} else {
@@ -80,7 +83,12 @@ func setGlobalsFromContext(ctx *cli.Context) error {
 			}
 		}
 	}
-	setGlobals(verbose, numTests)
+	// Standard suffix.
+	suffix := "tmp-bucket"
+	if ctx.GlobalString("id") != "" {
+		suffix = ctx.GlobalString("id")
+	}
+	setGlobals(verbose, numTests, suffix)
 
 	return nil
 }

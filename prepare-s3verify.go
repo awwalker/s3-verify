@@ -28,27 +28,24 @@ import (
 	"github.com/minio/minio-go"
 )
 
-// prepareBuckets - Uses minio-go library to create new testing buckets for use by s3verify.
-func prepareBuckets(region string, client *minio.Client) ([]string, error) {
-	message := "Creating test buckets"
-	bucketNames := []string{
-		randString(60, rand.NewSource(time.Now().UnixNano()), "s3verify-"),
-		randString(60, rand.NewSource(time.Now().UnixNano()), "s3verify-"),
+const numTestObjects = 101
+
+// prepareBucket - Uses minio-go library to create new testing bucket for use by s3verify.
+func prepareBuckets(region string, client *minio.Client) (string, error) {
+	message := "Creating test bucket"
+	bucketName := "s3verify-" + globalSuffix
+	// Spin scanBar
+	scanBar(message)
+	err := client.MakeBucket(bucketName, region)
+	if err != nil {
+		printMessage(message, err)
+		return "", err
 	}
-	for _, bucketName := range bucketNames {
-		// Spin scanBar
-		scanBar(message)
-		err := client.MakeBucket(bucketName, region)
-		if err != nil {
-			printMessage(message, err)
-			return nil, err
-		}
-		// Spin scanBar
-		scanBar(message)
-	}
+	// Spin scanBar
+	scanBar(message)
 	// Bucket preparation passed.
 	printMessage(message, nil)
-	return bucketNames, nil
+	return bucketName, nil
 }
 
 // TODO: see if parallelization has a place here.
@@ -58,11 +55,11 @@ func prepareObjects(client *minio.Client, bucketName string) error {
 	message := "Creating test objects"
 	// TODO: update this to 1001...for testing purposes it is OK to leave it at 101 for now.
 	// Upload 1001 objects specifically for the list-objects tests.
-	for i := 0; i < 101; i++ {
+	for i := 0; i < numTestObjects; i++ {
 		// Spin scanBar
 		scanBar(message)
 		randomData := randString(60, rand.NewSource(time.Now().UnixNano()), "")
-		objectKey := "s3verify/put/object/" + strconv.Itoa(i)
+		objectKey := "s3verify/put/object/" + globalSuffix + strconv.Itoa(i)
 		// Create 60 bytes worth of random data for each object.
 		reader := bytes.NewReader([]byte(randomData))
 		_, err := client.PutObject(bucketName, objectKey, reader, "application/octet-stream")
@@ -74,7 +71,7 @@ func prepareObjects(client *minio.Client, bucketName string) error {
 		scanBar(message)
 	}
 	randomData := randString(60, rand.NewSource(time.Now().UnixNano()), "")
-	objectKey := "s3verify/list/testprefix"
+	objectKey := "s3verify/list/" + globalSuffix
 	reader := bytes.NewReader([]byte(randomData))
 	_, err := client.PutObject(bucketName, objectKey, reader, "application/octet-stream")
 	if err != nil {
@@ -117,21 +114,29 @@ func validateBucket(config ServerConfig, bucketName string) error {
 	objectInfoCh := client.ListObjects(bucketName, "s3verify/", true, doneCh)
 	for objectInfo := range objectInfoCh {
 		object := &ObjectInfo{
-			Key: objectInfo.Key,
+			// If objects are prepared they need to be given the correct metadata to pass listing tests.
+			Key:          objectInfo.Key,
+			ETag:         objectInfo.ETag,
+			LastModified: objectInfo.LastModified,
 		}
 		preparedObjects = append(preparedObjects, object)
+	}
+	// Make sure that enough objects were actually found with the right prefix.
+	if len(preparedObjects) < numTestObjects {
+		err := fmt.Errorf("Not enough test objects found: need at least %d, only found %d", numTestObjects, len(preparedObjects))
+		return err
 	}
 	return nil
 }
 
 // TODO: Create function using minio-go to upload 1001 parts of a multipart operation.
 
-// mainPrepareS3Verify - Create two new buckets and 1001 objects for s3verify to use in the test.
-func mainPrepareS3Verify(config ServerConfig) ([]string, error) {
+// mainPrepareS3Verify - Create one new buckets and 1001 objects for s3verify to use in the test.
+func mainPrepareS3Verify(config ServerConfig) (string, error) {
 	// Extract necessary values from the config.
 	hostURL, err := url.Parse(config.Endpoint)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	region := config.Region
 	secure := false
@@ -140,16 +145,16 @@ func mainPrepareS3Verify(config ServerConfig) ([]string, error) {
 	}
 	client, err := minio.New(hostURL.Host, config.Access, config.Secret, secure)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	// Create testing buckets.
-	validBucketNames, err := prepareBuckets(region, client)
+	validBucketName, err := prepareBuckets(region, client)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	// Use the first newly created bucket to store all the objects.
-	if err := prepareObjects(client, validBucketNames[0]); err != nil {
-		return nil, err
+	if err := prepareObjects(client, validBucketName); err != nil {
+		return "", err
 	}
-	return validBucketNames, nil
+	return validBucketName, nil
 }

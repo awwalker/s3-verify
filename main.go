@@ -45,15 +45,16 @@ var s3verifyHelpTemplate = `NAME:
 USAGE:
 	{{.Name}} {{if .Flags}}[FLAGS...] {{end}}
 GLOBAL FLAGS:
-	{{range .Flags}}{{.}}
-	{{end}}
+{{range .Flags}}{{.}}
+{{end}}
 EXAMPLES:
-	1. Run all tests on Minio server. Note play.minio.io:9000 is a public test server. 
-	You are free to use these Secret and Access keys in all your tests.
-		$ S3_URL=https://play.minio.io:9000 S3_ACCESS=Q3AM3UQ867SPQQA43P2F S3_SECRET=zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG s3verify --extended
-	2. Run all basic tests on Amazon S3 server using flags. 
-	Note that passing access and secret keys as flags should be avoided on a multi-user server for security reasons.
-		$ s3verify --access YOUR_ACCESS_KEY --secret YOUR_SECRET_KEY --url https://s3.amazonaws.com --region us-west-1
+1. Run all tests on Minio server. play.minio.io:9000 is a public test server. 
+You can use these secret and access keys in all your tests.
+$ S3_URL=https://play.minio.io:9000 S3_ACCESS=Q3AM3UQ867SPQQA43P2F S3_SECRET=zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG s3verify --extended
+
+2. Run all basic tests on Amazon S3 server using flags. 
+NOTE: Passing access and secret keys as flags should be avoided on a multi-user server for security reasons.
+$ s3verify --access YOUR_ACCESS_KEY --secret YOUR_SECRET_KEY --url https://s3.amazonaws.com --region us-west-1
 `
 
 // APItest - Define all mainXXX tests to be of this form.
@@ -102,57 +103,65 @@ func callAllAPIs(ctx *cli.Context) {
 		cli.ShowAppHelpAndExit(ctx, 1)
 	}
 	// Test that the given endpoint is reachable with a simple GET request.
-	if err := verifyHostReachable(config.Endpoint, config.Region); err != nil { // If the provided endpoint is unreachable error out instantly.
+	if err := verifyHostReachable(config.Endpoint, config.Region); err != nil {
+		// If the provided endpoint is unreachable error out instantly.
 		console.Fatalln(err)
 	}
+	// Determine whether or not extended tests will be run.
+	testExtended := ctx.GlobalBool("extended")
+	// If a test environment is asked for prepare it now.
 	if ctx.GlobalBool("prepare") {
-		// Create a prepared testing environment with 2 buckets and 1001 objects and 1001 object parts.
-		bucketNames, err := mainPrepareS3Verify(*config)
+		// Create a prepared testing environment with 1 bucket and 1001 objects.
+		_, err := mainPrepareS3Verify(*config)
 		if err != nil {
 			console.Fatalln(err)
 		}
-		console.Printf("Please run 's3verify -a [YOUR_ACCESS_KEY] -s [YOUR_SECRET_KEY] -u [HOST_URL] [FLAGS...] %s %s'\n", bucketNames[0], bucketNames[1])
-	} else if ctx.GlobalString("clean") != "" {
-		if err := cleanObjects(*config, ctx.GlobalString("clean")); err != nil {
+		console.Printf("Please run: S3_URL=%s S3_ACCESS=%s S3_SECRET=%s s3verify -id %s", config.Endpoint, config.Access, config.Secret, globalSuffix)
+	} else if ctx.GlobalString("clean") != "" { // Clean any previously --prepare(d) tests up.
+		// Retrieve the bucket to be cleaned up.
+		bucketName := "s3verify-" + ctx.GlobalString("clean")
+		if err := cleanS3verify(*config, bucketName); err != nil {
 			console.Fatalln(err)
 		}
-		if err := cleanBucket(*config, ctx.GlobalString("clean")); err != nil {
+	} else if ctx.GlobalString("id") != "" { // If an id is provided assume that this is an already prepared bucket and use it as such.
+		bucketName := "s3verify-" + globalSuffix
+		console.Printf("S3verify attempting to use %s to test AWS S3 V4 signature compatibility.", bucketName)
+		if err := validateBucket(*config, bucketName); err != nil {
 			console.Fatalln(err)
 		}
-	} else if len(ctx.Args()) == 2 {
-		console.Printf("s3verify attempting to test AWS signv4 compatability using %s and %s...\n", ctx.Args()[0], ctx.Args()[1])
-		// Validate the passed names as valid bucket names and store their objects in the global objects array.
-		for _, bucketName := range ctx.Args() {
-			validateBucket(*config, bucketName)
-		}
-		mainCount := 1
-		for _, test := range preparedTests { // Run all tests that have been set up.
-			if test.Extended {
-				if ctx.GlobalBool("extended") {
-					test.Test(*config, mainCount)
-					mainCount++
-				}
-			} else {
-				if !test.Test(*config, mainCount) && test.Critical {
-					os.Exit(1)
-				}
-				mainCount++
-			}
-		}
+		runPreparedTests(*config, testExtended)
 	} else {
 		// If the user does not use --prepare flag then just run all non preparedTests.
-		mainCount := 1
-		for _, test := range unpreparedTests {
-			if test.Extended {
-				if ctx.GlobalBool("extended") {
-					test.Test(*config, mainCount)
-				}
-			} else {
-				if !test.Test(*config, mainCount) && test.Critical {
-					os.Exit(1)
-				}
-				mainCount++
+		runUnPreparedTests(*config, testExtended)
+	}
+}
+
+// runUnPreparedTests - run all tests if --prepare was not used.
+func runUnPreparedTests(config ServerConfig, testExtended bool) {
+	runTests(config, unpreparedTests, testExtended)
+}
+
+// runPreparedTests - run all previously prepared tests.
+func runPreparedTests(config ServerConfig, testExtended bool) {
+	runTests(config, preparedTests, testExtended)
+}
+
+// runTests - run all provided tests.
+func runTests(config ServerConfig, tests []APItest, testExtended bool) {
+	count := 1
+	for _, test := range tests {
+		if test.Extended {
+			// Only run extended tests if explicitly asked for.
+			if testExtended {
+				test.Test(config, count)
+				count++
 			}
+		} else {
+			if !test.Test(config, count) && test.Critical {
+				// If the test failed and it was critical exit immediately.
+				os.Exit(1)
+			}
+			count++
 		}
 	}
 }
