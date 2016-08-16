@@ -36,8 +36,20 @@ func prepareBuckets(region string, client *minio.Client) (string, error) {
 	bucketName := "s3verify-" + globalSuffix
 	// Spin scanBar
 	scanBar(message)
-	err := client.MakeBucket(bucketName, region)
+	// Check to see if the desired bucket already exists.
+	bucketExists, err := client.BucketExists(bucketName)
 	if err != nil {
+		// The bucket with the given id already exists.
+		printMessage(message, err)
+		return "", err
+	}
+	// Exit successfully if bucket already exists.
+	if bucketExists {
+		printMessage(message, nil)
+		return bucketName, nil
+	}
+	// Create the new testing bucket.
+	if err := client.MakeBucket(bucketName, region); err != nil {
 		printMessage(message, err)
 		return "", err
 	}
@@ -53,23 +65,36 @@ func prepareBuckets(region string, client *minio.Client) (string, error) {
 // prepareObjects - Uses minio-go library to create 1001 new testing objects for use by s3verify.
 func prepareObjects(client *minio.Client, bucketName string) error {
 	message := "Creating test objects"
-	// TODO: update this to 1001...for testing purposes it is OK to leave it at 101 for now.
-	// Upload 1001 objects specifically for the list-objects tests.
-	for i := 0; i < numTestObjects; i++ {
-		// Spin scanBar
-		scanBar(message)
-		randomData := randString(60, rand.NewSource(time.Now().UnixNano()), "")
-		objectKey := "s3verify/put/object/" + globalSuffix + strconv.Itoa(i)
-		// Create 60 bytes worth of random data for each object.
-		reader := bytes.NewReader([]byte(randomData))
-		_, err := client.PutObject(bucketName, objectKey, reader, "application/octet-stream")
-		if err != nil {
-			printMessage(message, err)
-			return err
-		}
-		// Spin scanBar
-		scanBar(message)
+	// First check that the bucketName does not already contain the correct number of s3verify objects.
+	objCount := numTestObjects
+	doneCh := make(chan struct{})
+	objectInfoCh := client.ListObjects(bucketName, "s3verify/", true, doneCh)
+	for _ = range objectInfoCh {
+		objCount++
 	}
+	if objCount == numTestObjects {
+		printMessage(message, nil)
+		return nil
+	} else {
+		// TODO: update this to 1001...for testing purposes it is OK to leave it at 101 for now.
+		// Upload 1001 objects specifically for the list-objects tests.
+		for i := objCount; i < numTestObjects; i++ {
+			// Spin scanBar
+			scanBar(message)
+			randomData := randString(60, rand.NewSource(time.Now().UnixNano()), "")
+			objectKey := "s3verify/put/object/" + globalSuffix + strconv.Itoa(i)
+			// Create 60 bytes worth of random data for each object.
+			reader := bytes.NewReader([]byte(randomData))
+			_, err := client.PutObject(bucketName, objectKey, reader, "application/octet-stream")
+			if err != nil {
+				printMessage(message, err)
+				return err
+			}
+			// Spin scanBar
+			scanBar(message)
+		}
+	}
+
 	randomData := randString(60, rand.NewSource(time.Now().UnixNano()), "")
 	objectKey := "s3verify/list/" + globalSuffix
 	reader := bytes.NewReader([]byte(randomData))

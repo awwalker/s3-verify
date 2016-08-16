@@ -116,7 +116,7 @@ func callAllAPIs(ctx *cli.Context) {
 		if err != nil {
 			console.Fatalln(err)
 		}
-		console.Printf("Please run: S3_URL=%s S3_ACCESS=%s S3_SECRET=%s s3verify -id %s", config.Endpoint, config.Access, config.Secret, globalSuffix)
+		console.Printf("Please run: S3_URL=%s S3_ACCESS=%s S3_SECRET=%s s3verify --id %s\n", config.Endpoint, config.Access, config.Secret, globalSuffix)
 	} else if ctx.GlobalString("clean") != "" { // Clean any previously --prepare(d) tests up.
 		// Retrieve the bucket to be cleaned up.
 		bucketName := "s3verify-" + ctx.GlobalString("clean")

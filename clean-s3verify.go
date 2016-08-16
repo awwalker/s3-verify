@@ -23,23 +23,23 @@ import (
 )
 
 // cleanObjects - use minio-go to remove any s3verify created objects.
-func cleanObjects(config ServerConfig, bucketName string) error {
+func cleanObjects(config ServerConfig, client *minio.Client, bucketName string) error {
 	message := "CleanUp (Removing Objects):"
 	// Spin scanBar
 	scanBar(message)
-	// Create new minio-go host from config.
-	hostURL, err := url.Parse(config.Endpoint)
+
+	// Check that the bucket actually exists first.
+	bucketExists, err := client.BucketExists(bucketName)
 	if err != nil {
+		printMessage(message, err)
 		return err
 	}
-	secure := false
-	if hostURL.Scheme == "https" {
-		secure = true
+	// Exit successfully if bucket does not exist.
+	if !bucketExists {
+		printMessage(message, nil)
+		return nil
 	}
-	client, err := minio.New(hostURL.Host, config.Access, config.Secret, secure)
-	if err != nil {
-		return err
-	}
+
 	doneCh := make(chan struct{})
 	defer close(doneCh)
 
@@ -59,22 +59,20 @@ func cleanObjects(config ServerConfig, bucketName string) error {
 }
 
 // cleanBucket - use minio-go to cleanup any s3verify created buckets.
-func cleanBucket(config ServerConfig, bucketName string) error {
+func cleanBucket(config ServerConfig, client *minio.Client, bucketName string) error {
 	message := "CleanUp (Removing Buckets):"
 	// Spin scanBar
 	scanBar(message)
-	// Create new minio-go host from config.
-	hostURL, err := url.Parse(config.Endpoint)
+	// Check that the bucket actually exists first.
+	bucketExists, err := client.BucketExists(bucketName)
 	if err != nil {
-		return err
+		printMessage(message, nil)
+		return nil
 	}
-	secure := false
-	if hostURL.Scheme == "https" {
-		secure = true
-	}
-	client, err := minio.New(hostURL.Host, config.Access, config.Secret, secure)
-	if err != nil {
-		return err
+	// Exit successfully if bucket does not exist.
+	if !bucketExists {
+		printMessage(message, nil)
+		return nil
 	}
 	if err := client.RemoveBucket(bucketName); err != nil {
 		return err
@@ -85,10 +83,23 @@ func cleanBucket(config ServerConfig, bucketName string) error {
 
 // cleanS3verify - purges the given bucketName of objects then removes the bucket.
 func cleanS3verify(config ServerConfig, bucketName string) error {
-	if err := cleanObjects(config, bucketName); err != nil {
+	hostURL, err := url.Parse(config.Endpoint)
+	if err != nil {
 		return err
 	}
-	if err := cleanBucket(config, bucketName); err != nil {
+	secure := false
+	if hostURL.Scheme == "https" {
+		secure = true
+	}
+	// Extract only the host from the url.
+	client, err := minio.New(hostURL.Host, config.Access, config.Secret, secure)
+	if err != nil {
+		return err
+	}
+	if err := cleanObjects(config, client, bucketName); err != nil {
+		return err
+	}
+	if err := cleanBucket(config, client, bucketName); err != nil {
 		return err
 	}
 	return nil
