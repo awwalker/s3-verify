@@ -73,14 +73,14 @@ func newGetObjectReq(bucketName, objectName string, responseHeaders map[string]s
 // TODO: These checks only verify correctly formatted requests. There is no request that is made to fail / check failure yet.
 
 // getObjectVerify - Check a Response's Status, Headers, and Body for AWS S3 compliance.
-func getObjectVerify(res *http.Response, expectedBody []byte, expectedStatusCode int, expectedHeader map[string]string) error {
+func getObjectVerify(res *http.Response, expectedBody []byte, expectedStatusCode int, expectedHeader map[string]string, expectedError ErrorResponse) error {
 	if err := verifyHeaderGetObject(res.Header, expectedHeader); err != nil {
 		return err
 	}
 	if err := verifyStatusGetObject(res.StatusCode, expectedStatusCode); err != nil {
 		return err
 	}
-	if err := verifyBodyGetObject(res.Body, expectedBody); err != nil {
+	if err := verifyBodyGetObject(res.Body, expectedBody, expectedError); err != nil {
 		return err
 	}
 	return nil
@@ -102,14 +102,30 @@ func verifyHeaderGetObject(header http.Header, expectedHeaders map[string]string
 }
 
 // verifyBodyGetObject - Verify that the body returned matches what is expected.
-func verifyBodyGetObject(resBody io.Reader, expectedBody []byte) error {
-	body, err := ioutil.ReadAll(resBody)
-	if err != nil {
+func verifyBodyGetObject(resBody io.Reader, expectedBody []byte, expectedError ErrorResponse) error {
+	if expectedError.Message == "" {
+		body, err := ioutil.ReadAll(resBody)
+		if err != nil {
+			return err
+		}
+		// Compare what was created to be uploaded and what is contained in the response body.
+		if !bytes.Equal(body, expectedBody) {
+			err := fmt.Errorf("Unexpected Body Recieved: wanted %v, got %v", string(expectedBody), string(body))
+			return err
+		}
+		return nil
+	}
+	// Verify the error returned was correct.
+	receivedError := ErrorResponse{}
+	if err := xmlDecoder(resBody, &receivedError); err != nil {
 		return err
 	}
-	// Compare what was created to be uploaded and what is contained in the response body.
-	if !bytes.Equal(body, expectedBody) {
-		err := fmt.Errorf("Unexpected Body Recieved: wanted %v, got %v", string(expectedBody), string(body))
+	if receivedError.Message != expectedError.Message {
+		err := fmt.Errorf("Unexpected Error Message Received: wanted %s, got %s", expectedError.Message, receivedError.Message)
+		return err
+	}
+	if receivedError.Code != expectedError.Code {
+		err := fmt.Errorf("Unexpected Error Code Received: wanted %s, got %s", expectedError.Code, receivedError.Code)
 		return err
 	}
 	return nil
@@ -130,12 +146,12 @@ func mainGetObject(config ServerConfig, curTest int) bool {
 	// Use the bucket created in the mainPutBucketPrepared Test.
 	// Set the response headers to be overwritten.
 	expectedHeaders := map[string]string{
-		"response-content-type": "image/gif",
-		//		"response-content-language":    "da",
+		"response-content-type":        "image/gif",
+		"response-content-language":    "da",
 		"response-expires":             "Thu, 01 Dec 1994 16:00:00 GMT",
 		"response-cache-control":       "no-cache",
 		"response-content-disposition": "attachment; filename=\"s3verify.txt\"",
-		//		"response-content-encoding":    "gzip",
+		// "response-content-encoding":    "gzip",
 	}
 	// All getobject tests happen in s3verify created buckets
 	// on s3verify objects.
@@ -157,7 +173,7 @@ func mainGetObject(config ServerConfig, curTest int) bool {
 		}
 		defer closeResponse(res)
 		// Verify the response.
-		if err := getObjectVerify(res, object.Body, http.StatusOK, expectedHeaders); err != nil {
+		if err := getObjectVerify(res, object.Body, http.StatusOK, expectedHeaders, ErrorResponse{}); err != nil {
 			printMessage(message, err)
 			return false
 		}

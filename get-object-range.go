@@ -27,7 +27,7 @@ import (
 )
 
 // newGetObjectRangeReq - Create a new GET object range request.
-func newGetObjectRangeReq(bucketName, objectName string, startRange, endRange int64) (Request, error) {
+func newGetObjectRangeReq(bucketName, objectName, startRange, endRange string) (Request, error) {
 	// getObjectRangeReq - a new HTTP request for a GET object with a specific range request.
 	var getObjectRangeReq = Request{
 		customHeader: http.Header{},
@@ -44,7 +44,7 @@ func newGetObjectRangeReq(bucketName, objectName string, startRange, endRange in
 	}
 
 	// Set the headers.
-	getObjectRangeReq.customHeader.Set("Range", "bytes="+strconv.FormatInt(startRange, 10)+"-"+strconv.FormatInt(endRange, 10))
+	getObjectRangeReq.customHeader.Set("Range", "bytes="+startRange+"-"+endRange)
 	getObjectRangeReq.customHeader.Set("User-Agent", appUserAgent)
 	getObjectRangeReq.customHeader.Set("X-Amz-Content-Sha256", hex.EncodeToString(sha256Sum))
 	return getObjectRangeReq, nil
@@ -59,34 +59,99 @@ func mainGetObjectRange(config ServerConfig, curTest int) bool {
 	// All getobject tests happen in s3verify created buckets
 	// on s3verify created objects.
 	bucketName := s3verifyBuckets[0].Name
-	for _, object := range s3verifyObjects {
-		// Spin scanBar
-		scanBar(message)
-		startRange := rand.Int63n(object.Size)
-		endRange := rand.Int63n(int64(object.Size-startRange)) + startRange
-		// Create new GET object range request...testing range.
-		req, err := newGetObjectRangeReq(bucketName, object.Key, startRange, endRange)
-		if err != nil {
-			printMessage(message, err)
-			return false
-		}
-		// Execute the request.
-		res, err := config.execRequest("GET", req)
-		if err != nil {
-			printMessage(message, err)
-			return false
-		}
-		defer closeResponse(res)
-		bufRange := object.Body[startRange : endRange+1]
-		// Verify the response...these checks do not check the headers yet.
-		if err := getObjectVerify(res, bufRange, http.StatusPartialContent, nil); err != nil {
-			printMessage(message, err)
-			return false
-		}
-		// Spin scanBar
-		scanBar(message)
+	testObject := s3verifyObjects[0]
+	// Spin scanBar
+	scanBar(message)
 
+	// Test a random range.
+	startRange := rand.Int63n(testObject.Size)
+	endRange := rand.Int63n(int64(testObject.Size-startRange)) + startRange
+	// Create new GET object range request...testing range.
+	req, err := newGetObjectRangeReq(bucketName, testObject.Key, strconv.FormatInt(startRange, 10), strconv.FormatInt(endRange, 10))
+	if err != nil {
+		printMessage(message, err)
+		return false
 	}
+	// Execute the request.
+	res, err := config.execRequest("GET", req)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	defer closeResponse(res)
+	bufRange := testObject.Body[startRange : endRange+1]
+	// Verify the response...these checks do not check the headers yet.
+	if err := getObjectVerify(res, bufRange, http.StatusPartialContent, nil, ErrorResponse{}); err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+
+	// Test an openended range. Expecting whole object back.
+	startOpenRange := ""
+	endOpenRange := strconv.FormatInt(testObject.Size, 10)
+	// Create a new open range req.
+	openRangeReq, err := newGetObjectRangeReq(bucketName, testObject.Key, startOpenRange, endOpenRange)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Execute the open request.
+	openRangeRes, err := config.execRequest("GET", openRangeReq)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Verify that the request failed as expected.
+	if err := getObjectVerify(openRangeRes, testObject.Body, http.StatusPartialContent, nil, ErrorResponse{}); err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Test a negative range request. Should give back whole object.
+	startNegativeRange := "-5"
+	endNegativeRange := "1"
+
+	// Creatge a new negative range req.
+	negativeRangeReq, err := newGetObjectRangeReq(bucketName, testObject.Key, startNegativeRange, endNegativeRange)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Execute the negative request.
+	negativeRangeRes, err := config.execRequest("GET", negativeRangeReq)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Verify that the request failed as expected.
+	if err := getObjectVerify(negativeRangeRes, testObject.Body, http.StatusOK, nil, ErrorResponse{}); err != nil {
+		printMessage(message, err)
+		return false
+	}
+
+	// Test an unended range. Expecting full object.
+	startUnEndedRange := ""
+	endUnEndedRange := strconv.FormatInt(testObject.Size, 10)
+
+	// Creatge a new UnEnded range req.
+	unEndedRangeReq, err := newGetObjectRangeReq(bucketName, testObject.Key, startUnEndedRange, endUnEndedRange)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Execute the UnEnded request.
+	unEndedRangeRes, err := config.execRequest("GET", unEndedRangeReq)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Verify that the request failed as expected.
+	if err := getObjectVerify(unEndedRangeRes, testObject.Body, http.StatusPartialContent, nil, ErrorResponse{}); err != nil {
+		printMessage(message, err)
+		return false
+	}
+
 	// Spin scanBar
 	scanBar(message)
 	// Test passed.
