@@ -19,11 +19,12 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
-	"encoding/xml"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 // newCopyObjectReq - Create a new HTTP request for PUT object with copy-
@@ -52,11 +53,11 @@ func newCopyObjectReq(sourceBucketName, sourceObjectName, destBucketName, destOb
 }
 
 // copyObjectVerify - Verify that the response returned matches what is expected.
-func copyObjectVerify(res *http.Response, expectedStatusCode int) error {
+func copyObjectVerify(res *http.Response, expectedStatusCode int, expectedError ErrorResponse) error {
 	if err := verifyHeaderCopyObject(res.Header); err != nil {
 		return err
 	}
-	if err := verifyBodyCopyObject(res.Body); err != nil {
+	if err := verifyBodyCopyObject(res.Body, expectedError); err != nil {
 		return err
 	}
 	if err := verifyStatusCopyObject(res.StatusCode, expectedStatusCode); err != nil {
@@ -73,12 +74,28 @@ func verifyHeaderCopyObject(header http.Header) error {
 	return nil
 }
 
-// verifyBodycopyObject - verify that the body returned is a valid CopyObject Result.
-func verifyBodyCopyObject(resBody io.Reader) error {
-	copyObjRes := copyObjectResult{}
-	decoder := xml.NewDecoder(resBody)
-	err := decoder.Decode(&copyObjRes)
-	if err != nil {
+// verifyBodycopyObject - verify that the body returned is a valid CopyObject Result or error.
+func verifyBodyCopyObject(resBody io.Reader, expectedError ErrorResponse) error {
+	if expectedError.Message == "" { // Verify that the body returned is a valid copyobject result.
+		copyObjRes := copyObjectResult{}
+		if err := xmlDecoder(resBody, &copyObjRes); err != nil {
+			return err
+		}
+		return nil
+	}
+	// otherwise verify that the error returned is what is expected.
+	receivedError := ErrorResponse{}
+	if err := xmlDecoder(resBody, &receivedError); err != nil {
+		return err
+	}
+	// Validate the message returned.
+	if receivedError.Message != expectedError.Message {
+		err := fmt.Errorf("Unexpected Error Message Received: wanted %s, got %s", expectedError.Message, receivedError.Message)
+		return err
+	}
+	// Validate the error code returned.
+	if receivedError.Code != expectedError.Code {
+		err := fmt.Errorf("Unexpected Error Code Received: wanted %s, got %s", expectedError.Code, receivedError.Code)
 		return err
 	}
 	return nil
@@ -105,6 +122,8 @@ func mainCopyObject(config ServerConfig, curTest int) bool {
 	sourceObject := s3verifyObjects[0]
 
 	// TODO: create tests designed to fail.
+
+	// Test same name source and dest objects.
 	destObject := &ObjectInfo{
 		Key: sourceObject.Key,
 	}
@@ -129,12 +148,137 @@ func mainCopyObject(config ServerConfig, curTest int) bool {
 	// Spin scanBar
 	scanBar(message)
 	// Verify the response.
-	if err = copyObjectVerify(res, http.StatusOK); err != nil {
+	if err := copyObjectVerify(res, http.StatusOK, ErrorResponse{}); err != nil {
+		printMessage(message, err)
+		return false
+	}
+
+	// Test different named source and dest objects.
+	destObjectDifName := &ObjectInfo{
+		Key: sourceObject.Key + "-copy",
+	}
+	// Spin scanBar
+	scanBar(message)
+	copyObjects = append(copyObjects, destObjectDifName)
+	// Create a new request.
+	difNameReq, err := newCopyObjectReq(sourceBucketName, sourceObject.Key, destBucketName, destObjectDifName.Key)
+	if err != nil {
 		printMessage(message, err)
 		return false
 	}
 	// Spin scanBar
 	scanBar(message)
+	// Execute request.
+	difNameRes, err := config.execRequest("PUT", difNameReq)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Verify the response.
+	if err := copyObjectVerify(difNameRes, http.StatusOK, ErrorResponse{}); err != nil {
+		printMessage(message, err)
+		return false
+	}
+
+	// Test a failed copy. The source will not exist.
+	invalidKeyError := ErrorResponse{
+		Code:    "NoSuchKey",
+		Message: "The specified key does not exist.",
+	}
+	destObjectFailed := &ObjectInfo{
+		Key: randString(60, rand.NewSource(time.Now().UnixNano()), "s3verify-DNE-"),
+	}
+	// Spin scanBar
+	scanBar(message)
+	// No need to append this object will not be uploaded on a compatible server.
+	// Create a new request.
+	invalidReq, err := newCopyObjectReq(sourceBucketName, randString(60, rand.NewSource(time.Now().UnixNano()), ""), destBucketName, destObjectFailed.Key)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Execute request.
+	invalidRes, err := config.execRequest("PUT", invalidReq)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Verify the response failed.
+	if err := copyObjectVerify(invalidRes, http.StatusNotFound, invalidKeyError); err != nil {
+		printMessage(message, err)
+		return false
+	}
+
+	// Test a failed copy. The source bucket will not exist.
+	invalidSourceBucketError := ErrorResponse{
+		Code:    "NoSuchBucket",
+		Message: "The specified bucket does not exist",
+	}
+
+	destObjectNoSourceBucket := &ObjectInfo{
+		Key: sourceObject.Key + "DNE",
+	}
+	// This object will not be created.
+	invalidSourceBucketReq, err := newCopyObjectReq(sourceBucketName+"DNE", sourceObject.Key, destBucketName, destObjectNoSourceBucket.Key)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Execute the response.
+	invalidSourceBucketRes, err := config.execRequest("PUT", invalidSourceBucketReq)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Verify the request failed correctly.
+	if err := copyObjectVerify(invalidSourceBucketRes, http.StatusNotFound, invalidSourceBucketError); err != nil {
+		printMessage(message, err)
+		return false
+	}
+
+	// Test a failed copy. The dest bucket will not exist.
+	invalidDestBucketError := ErrorResponse{
+		Code:    "NoSuchBucket",
+		Message: "The specified bucket does not exist",
+	}
+
+	destObjectNoDestBucket := &ObjectInfo{
+		Key: sourceObject.Key + "DNE",
+	}
+	// This object will not be created.
+	invalidDestBucketReq, err := newCopyObjectReq(sourceBucketName, sourceObject.Key, destBucketName+"DNE", destObjectNoDestBucket.Key)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Execute the response.
+	invalidDestBucketRes, err := config.execRequest("PUT", invalidDestBucketReq)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Verify the request failed correctly.
+	if err := copyObjectVerify(invalidDestBucketRes, http.StatusNotFound, invalidDestBucketError); err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Test passed.
 	printMessage(message, nil)
 	return true
 }
