@@ -156,30 +156,52 @@ func mainGetObject(config ServerConfig, curTest int) bool {
 	// All getobject tests happen in s3verify created buckets
 	// on s3verify objects.
 	bucketName := s3verifyBuckets[0].Name
-	for _, object := range s3verifyObjects {
-		// Spin scanBar
-		scanBar(message)
-		// Create new GET object request.
-		req, err := newGetObjectReq(bucketName, object.Key, expectedHeaders)
-		if err != nil {
-			printMessage(message, err)
-			return false
-		}
-		// Execute the request.
-		res, err := config.execRequest("GET", req)
-		if err != nil {
-			printMessage(message, err)
-			return false
-		}
-		defer closeResponse(res)
-		// Verify the response.
-		if err := getObjectVerify(res, object.Body, http.StatusOK, expectedHeaders, ErrorResponse{}); err != nil {
-			printMessage(message, err)
-			return false
-		}
-		// Spin scanBar
-		scanBar(message)
+	testObject := s3verifyObjects[0]
+	// Spin scanBar
+	scanBar(message)
+
+	// Create new valid GET object request.
+	req, err := newGetObjectReq(bucketName, testObject.Key, expectedHeaders)
+	if err != nil {
+		printMessage(message, err)
+		return false
 	}
+	// Execute the request.
+	res, err := config.execRequest("GET", req)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	defer closeResponse(res)
+	// Verify the response.
+	if err := getObjectVerify(res, testObject.Body, http.StatusOK, expectedHeaders, ErrorResponse{}); err != nil {
+		printMessage(message, err)
+		return false
+	}
+
+	// Test getobject on an object that DNE.
+	invalidKeyError := ErrorResponse{
+		Code:    "NoSuchKey",
+		Message: "The specified key does not exist.",
+	}
+	invalidKeyReq, err := newGetObjectReq(bucketName, testObject.Key+"-DNE", nil)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Execute the request.
+	invalidKeyRes, err := config.execRequest("GET", invalidKeyReq)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	defer closeResponse(invalidKeyRes)
+	// Verify the request failed.
+	if err := getObjectVerify(invalidKeyRes, []byte{}, http.StatusNotFound, nil, invalidKeyError); err != nil {
+		printMessage(message, err)
+		return false
+	}
+
 	// Spin scanBar
 	scanBar(message)
 	// Test passed.
