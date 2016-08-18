@@ -19,6 +19,7 @@ package main
 import (
 	"crypto/md5"
 	"crypto/sha256"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"hash"
@@ -95,6 +96,12 @@ func verifyHostReachable(endpoint, region string) error {
 // xmlDecoder provide decoded value in xml.
 func xmlDecoder(body io.Reader, v interface{}) error {
 	d := xml.NewDecoder(body)
+	return d.Decode(v)
+}
+
+// jsonDecoder provide decoded value in json.
+func jsonDecoder(body io.Reader, v interface{}) error {
+	d := json.NewDecoder(body)
 	return d.Decode(v)
 }
 

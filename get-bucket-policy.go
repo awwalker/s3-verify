@@ -24,6 +24,8 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+
+	"github.com/minio/minio-go/pkg/policy"
 )
 
 // newGetBucketPolicyReq - create a new request for the get-bucket-policy API.
@@ -55,7 +57,7 @@ func newGetBucketPolicyReq(bucketName string) (Request, error) {
 }
 
 // getBucketPolicyVerify - Verify the response returned matches what is expected.
-func getBucketPolicyVerify(res *http.Response, expectedStatusCode int, expectedPolicy BucketAccessPolicy, expectedError ErrorResponse) error {
+func getBucketPolicyVerify(res *http.Response, expectedStatusCode int, expectedPolicy policy.BucketAccessPolicy, expectedError ErrorResponse) error {
 	if err := verifyStatusGetBucketPolicy(res.StatusCode, expectedStatusCode); err != nil {
 		return err
 	}
@@ -86,29 +88,29 @@ func verifyHeaderGetBucketPolicy(header http.Header) error {
 }
 
 // verifyBodyGetBucketPolicy - verify the policy returned matches what is expected.
-func verifyBodyGetBucketPolicy(resBody io.Reader, expectedPolicy BucketAccessPolicy, expectedError ErrorResponse) error {
-	if expectedPolicy.Statements != nil {
-		receivedPolicy := BucketAccessPolicy{}
-		if err := xmlDecoder(resBody, &receivedPolicy); err != nil {
+func verifyBodyGetBucketPolicy(resBody io.Reader, expectedPolicy policy.BucketAccessPolicy, expectedError ErrorResponse) error {
+	if len(expectedPolicy.Statements) != 0 {
+		receivedPolicy := policy.BucketAccessPolicy{}
+		if err := jsonDecoder(resBody, &receivedPolicy); err != nil {
 			return err
 		}
 		if !reflect.DeepEqual(receivedPolicy, expectedPolicy) {
 			err := fmt.Errorf("Unexpected Bucket Policy Received: wanted %v, got %v", expectedPolicy, receivedPolicy)
 			return err
 		}
-	} else {
-		receivedError := ErrorResponse{}
-		if err := xmlDecoder(resBody, &receivedError); err != nil {
-			return err
-		}
-		if receivedError.Message != expectedError.Message {
-			err := fmt.Errorf("Unexpected Error Message: wanted %s, got %s", expectedError.Message, receivedError.Message)
-			return err
-		}
-		if receivedError.Code != expectedError.Code {
-			err := fmt.Errorf("Unexpected Error Code: wanted %s, got %s", expectedError.Code, receivedError.Code)
-			return err
-		}
+		return nil
+	}
+	receivedError := ErrorResponse{}
+	if err := xmlDecoder(resBody, &receivedError); err != nil {
+		return err
+	}
+	if receivedError.Message != expectedError.Message {
+		err := fmt.Errorf("Unexpected Error Message: wanted %s, got %s", expectedError.Message, receivedError.Message)
+		return err
+	}
+	if receivedError.Code != expectedError.Code {
+		err := fmt.Errorf("Unexpected Error Code: wanted %s, got %s", expectedError.Code, receivedError.Code)
+		return err
 	}
 	return nil
 }
@@ -118,9 +120,6 @@ func mainGetBucketPolicy(config ServerConfig, curTest int) bool {
 	message := fmt.Sprintf("[%02d/%d] GetBucketPolicy:", curTest, globalTotalNumTest)
 	// Spin scanBar
 	scanBar(message)
-
-	// TODO: so far only tests with no bucket policies to retrieve...need to add tests for buckets that
-	// actually have policies attached.
 
 	// Test missing bucket policy.
 	expectedError := ErrorResponse{
@@ -141,11 +140,88 @@ func mainGetBucketPolicy(config ServerConfig, curTest int) bool {
 		return false
 	}
 	// Verify the response.
-	if err := getBucketPolicyVerify(res, 404, BucketAccessPolicy{}, expectedError); err != nil {
+	if err := getBucketPolicyVerify(res, http.StatusNotFound, policy.BucketAccessPolicy{}, expectedError); err != nil {
 		printMessage(message, err)
 		return false
 	}
 
+	// Test readwrite policy is set.
+	bucketName = s3verifyBuckets[1].Name
+	// Create a new request.
+	readWriteReq, err := newGetBucketPolicyReq(bucketName)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Execute the request.
+	readWriteRes, err := config.execRequest("GET", readWriteReq)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Verify the response.
+	if err := getBucketPolicyVerify(readWriteRes, http.StatusOK, s3verifyPolicies[0], ErrorResponse{}); err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+
+	// Test readonly policy is set.
+	bucketName = s3verifyBuckets[2].Name
+	// Create a new request.
+	readOnlyReq, err := newGetBucketPolicyReq(bucketName)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Execute the request.
+	readOnlyRes, err := config.execRequest("GET", readOnlyReq)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Verify the response.
+	if err := getBucketPolicyVerify(readOnlyRes, http.StatusOK, s3verifyPolicies[1], ErrorResponse{}); err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+
+	// Test writeonly policy is set.
+	bucketName = s3verifyBuckets[3].Name
+	// Create a new request.
+	writeOnlyReq, err := newGetBucketPolicyReq(bucketName)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Execute the request.
+	writeOnlyRes, err := config.execRequest("GET", writeOnlyReq)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Verify the response.
+	if err := getBucketPolicyVerify(writeOnlyRes, http.StatusOK, s3verifyPolicies[2], ErrorResponse{}); err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
 	// Test passed.
 	printMessage(message, nil)
 	return true

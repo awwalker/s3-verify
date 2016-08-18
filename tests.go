@@ -47,6 +47,13 @@ var preparedTests = []APItest{
 		Critical: false, // This test is not used for future tests.
 	},
 
+	// Tests for PutBucketPolicy API.
+	APItest{
+		Test:     mainPutBucketPolicy,
+		Extended: false, // PutBucketPolicy is not an extended API.
+		Critical: true,  // This test does affect future tests.
+	},
+
 	// Tests for GetBucketPolicy API.
 	APItest{
 		Test:     mainGetBucketPolicy,
@@ -248,6 +255,13 @@ var unpreparedTests = []APItest{
 		Test:     mainPutBucketInvalid,
 		Extended: false, // PutBucket is not an extended API.
 		Critical: false, // This test does not affect future tests.
+	},
+
+	// Tests for PutBucketPolicy API.
+	APItest{
+		Test:     mainPutBucketPolicy,
+		Extended: false, // PutBucketPolicy is not an extended API.
+		Critical: true,  // This test does affect future tests.
 	},
 
 	// Tests for GetBucketPolicy API.

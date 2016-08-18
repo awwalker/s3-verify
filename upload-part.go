@@ -69,10 +69,11 @@ func newUploadPartReq(bucketName, objectName, uploadID string, partNumber int, p
 	}
 
 	// Set the Header values and Body of request.
-	uploadPartReq.contentBody = ioutil.NopCloser(reader)
+	uploadPartReq.contentBody = reader
 	uploadPartReq.contentLength = contentLength
 	uploadPartReq.customHeader.Set("X-Amz-Content-Sha256", hex.EncodeToString(sha256Sum))
 	uploadPartReq.customHeader.Set("Content-MD5", base64.StdEncoding.EncodeToString(md5Sum))
+	uploadPartReq.customHeader.Set("User-Agent", appUserAgent)
 
 	return uploadPartReq, nil
 }

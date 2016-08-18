@@ -173,8 +173,8 @@ func verifyHeaderPutBucket(header http.Header, bucketName string, expectedStatus
 func mainPutBucket(config ServerConfig, curTest int) bool {
 	message := fmt.Sprintf("[%02d/%d] PutBucket (Valid Names):", curTest, globalTotalNumTest)
 	// Spin the scanBar scanBar(message)
-	// Two new buckets are created on the same host regardless of whether or not the test has been prepared.
-	for i := 0; i < 2; i++ {
+	// Four new buckets are created on the same host regardless of whether or not the test has been prepared.
+	for i := 0; i < 4; i++ {
 		validBucket := BucketInfo{
 			Name: "s3verify-" + globalSuffix + strconv.Itoa(i),
 		}
