@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -45,15 +44,6 @@ func newGetObjectPresignedReq(config ServerConfig, bucketName, objectName string
 
 	// Set the request parameters.
 	getObjectPresignedReq.queryValues = requestParameters
-
-	// Set the headers.
-	//	reader := bytes.NewReader([]byte{})
-	//	_, sha256Sum, _, err := computeHash(reader)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	getObjectPresignedReq.customHeader.Set("X-Amz-Content-Sha256", hex.EncodeToString(sha256Sum))
-	//	getObjectPresignedReq.customHeader.Set("User-Agent", appUserAgent)
 
 	req, err := config.newRequest("GET", getObjectPresignedReq)
 	if err != nil {
@@ -91,12 +81,11 @@ func verifyBodyGetObjectPresigned(resBody io.Reader, expectedBody []byte, expect
 		}
 		return nil
 	}
-	receivedBody, err := ioutil.ReadAll(resBody)
-	if err != nil {
-		return err
-	}
-	if !bytes.Equal(receivedBody, expectedBody) {
-		err := fmt.Errorf("Unexpected Body Received: wanted %q, got %q", expectedBody, receivedBody)
+	// Capture the body stream.
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(resBody)
+	if !bytes.Equal(buf.Bytes(), expectedBody) {
+		err := fmt.Errorf("Unexpected Body Received: wanted %q, got %q", expectedBody, buf.Bytes())
 		return err
 	}
 	return nil
@@ -129,34 +118,29 @@ func mainGetObjectPresigned(config ServerConfig, curTest int) bool {
 	// Presigned getobject will only be tested in s3verify created buckets
 	// on s3verify created objects.
 	bucketName := s3verifyBuckets[0].Name
-	for i, object := range s3verifyObjects {
-		// Spin scanBar
-		scanBar(message)
-		// Create a new presigned GetObject req.
-		// TODO: so far these requests do not use request/response parameters.
-		reqURL, err := newGetObjectPresignedReq(config, bucketName, object.Key, time.Second*5, nil)
-		if err != nil {
-			printMessage(message, err)
-			return false
-		}
-		// Store the first created URL and make sure it expires later.
-		if i == 0 {
-			expiredURL = reqURL
-		}
-		// Execute the request.
-		res, err := config.Client.Get(reqURL.String())
-		if err != nil {
-			printMessage(message, err)
-			return false
-		}
-		defer closeResponse(res)
-		// Verify the response.
-		if err := getObjectPresignedVerify(res, http.StatusOK, object.Body, ErrorResponse{}); err != nil {
-			printMessage(message, err)
-			return false
-		}
-		// Spin scanBar
-		scanBar(message)
+	testObject := s3verifyObjects[0]
+	// Spin scanBar
+	scanBar(message)
+	// Create a new presigned GetObject req.
+	// TODO: so far these requests do not use request/response parameters.
+	reqURL, err := newGetObjectPresignedReq(config, bucketName, testObject.Key, time.Second*5, nil)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Store the created URL and make sure it expires later.
+	expiredURL = reqURL
+	// Execute the request.
+	res, err := config.Client.Get(reqURL.String())
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	defer closeResponse(res)
+	// Verify the response.
+	if err := getObjectPresignedVerify(res, http.StatusOK, testObject.Body, ErrorResponse{}); err != nil {
+		printMessage(message, err)
+		return false
 	}
 	// Spin scanBar
 	scanBar(message)
@@ -176,7 +160,7 @@ func mainGetObjectPresigned(config ServerConfig, curTest int) bool {
 	}
 	defer closeResponse(badRes)
 	// Verify that this badRes failed as expected.
-	if err := getObjectPresignedVerify(badRes, http.StatusForbidden, s3verifyObjects[0].Body, expectedError); err != nil {
+	if err := getObjectPresignedVerify(badRes, http.StatusForbidden, testObject.Body, expectedError); err != nil {
 		printMessage(message, err)
 		return false
 	}

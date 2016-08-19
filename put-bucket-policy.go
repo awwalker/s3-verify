@@ -26,7 +26,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/minio/minio-go/pkg/policy"
 )
@@ -123,7 +122,6 @@ func mainPutBucketPolicy(config ServerConfig, curTest int) bool {
 
 	// List of different bucketPolicies to create.
 	policies := []policy.BucketPolicy{
-		// policy.BucketPolicyNone,      // Set the first bucket to have no policy. (No Change).
 		policy.BucketPolicyReadWrite, // Set the second bucket to have both read/write permissions.
 		policy.BucketPolicyReadOnly,  // Set the third bucket to only read.
 		policy.BucketPolicyWriteOnly, // Set the last bucket to only write.
@@ -172,6 +170,5 @@ func mainPutBucketPolicy(config ServerConfig, curTest int) bool {
 	scanBar(message)
 	// Test passed.
 	printMessage(message, nil)
-	time.Sleep(time.Second * 5)
 	return true
 }
