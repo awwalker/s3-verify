@@ -216,6 +216,13 @@ var preparedTests = []APItest{
 		Critical: false, // This test does not affect future tests.
 	},
 
+	// Test for RemoveBucket API. (needs to be before remove object)
+	APItest{
+		Test:     mainRemoveBucketNotEmpty,
+		Extended: false, // RemoveBucket is not an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+
 	// Test for RemoveObject API.
 	APItest{
 		Test:     mainRemoveObjectExists,
@@ -418,6 +425,13 @@ var unpreparedTests = []APItest{
 		Critical: false, // This test does not affect future tests.
 	},
 
+	// Test for RemoveBucket API. (needs to be before remove object)
+	APItest{
+		Test:     mainRemoveBucketNotEmpty,
+		Extended: false, // RemoveBucket is not an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+
 	// Test for RemoveObject API.
 	APItest{
 		Test:     mainRemoveObjectExists,
@@ -428,6 +442,11 @@ var unpreparedTests = []APItest{
 	// Tests for RemoveBucket API.
 	APItest{
 		Test:     mainRemoveBucketExists,
+		Extended: false, // RemoveBucket is not an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
+	APItest{
+		Test:     mainRemoveBucketDNE,
 		Extended: false, // RemoveBucket is not an extended API.
 		Critical: false, // This test does not affect future tests.
 	},

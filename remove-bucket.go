@@ -173,3 +173,50 @@ func mainRemoveBucketDNE(config ServerConfig, curTest int) bool {
 	printMessage(message, nil)
 	return true
 }
+
+// Test the RemoveBucket API when the bucket is not empty.
+func mainRemoveBucketNotEmpty(config ServerConfig, curTest int) bool {
+	message := fmt.Sprintf("[%02d/%d] RemoveBucket (Bucket Not Empty):", curTest, globalTotalNumTest)
+	// Spin scanBar
+	scanBar(message)
+	// Attempt to remove a s3verify created bucket before the objects inside have been removed.
+	bucketName := s3verifyBuckets[0].Name
+
+	// Expected error response.
+	errResponse := ErrorResponse{
+		Code:    "BucketNotEmpty",
+		Message: "The bucket you tried to delete is not empty",
+	}
+
+	// Spin scanBar
+	scanBar(message)
+	// Create a new DELETE request for a bucket that is not yet empty.
+	req, err := newRemoveBucketReq(bucketName)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+
+	// Execute the request.
+	res, err := config.execRequest("DELETE", req)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	defer closeResponse(res)
+	// Spin scanBar
+	scanBar(message)
+
+	// Verify that the request failed.
+	if err := removeBucketVerify(res, http.StatusConflict, errResponse); err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Test passed.
+	printMessage(message, nil)
+	return true
+}
