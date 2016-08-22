@@ -126,7 +126,7 @@ func mainGetBucketPolicy(config ServerConfig, curTest int) bool {
 		Message: "The bucket policy does not exist",
 		Code:    "NoSuchBucketPolicy",
 	}
-	bucketName := s3verifyBuckets[0].Name
+	bucketName := s3verifyBuckets[3].Name
 	// Create a new request.
 	req, err := newGetBucketPolicyReq(bucketName)
 	if err != nil {
@@ -146,7 +146,7 @@ func mainGetBucketPolicy(config ServerConfig, curTest int) bool {
 	}
 
 	// Test readwrite policy is set.
-	bucketName = s3verifyBuckets[1].Name
+	bucketName = s3verifyBuckets[0].Name
 	// Create a new request.
 	readWriteReq, err := newGetBucketPolicyReq(bucketName)
 	if err != nil {
@@ -172,7 +172,7 @@ func mainGetBucketPolicy(config ServerConfig, curTest int) bool {
 	scanBar(message)
 
 	// Test readonly policy is set.
-	bucketName = s3verifyBuckets[2].Name
+	bucketName = s3verifyBuckets[1].Name
 	// Create a new request.
 	readOnlyReq, err := newGetBucketPolicyReq(bucketName)
 	if err != nil {
@@ -198,7 +198,7 @@ func mainGetBucketPolicy(config ServerConfig, curTest int) bool {
 	scanBar(message)
 
 	// Test writeonly policy is set.
-	bucketName = s3verifyBuckets[3].Name
+	bucketName = s3verifyBuckets[2].Name
 	// Create a new request.
 	writeOnlyReq, err := newGetBucketPolicyReq(bucketName)
 	if err != nil {

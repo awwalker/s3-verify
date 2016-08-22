@@ -103,8 +103,8 @@ func getScope(location string, t time.Time) string {
 	return scope
 }
 
-// getCredential generate a credential string.
-func getCredential(accessKeyID, location string, t time.Time) string {
+// GetCredential generate a credential string.
+func GetCredential(accessKeyID, location string, t time.Time) string {
 	scope := getScope(location, t)
 	return accessKeyID + "/" + scope
 }
@@ -216,7 +216,7 @@ func PreSignV4(req http.Request, accessKeyID, secretAccessKey, location string, 
 	t := time.Now().UTC()
 
 	// Get credential string.
-	credential := getCredential(accessKeyID, location, t)
+	credential := GetCredential(accessKeyID, location, t)
 
 	// Get all signed headers.
 	signedHeaders := getSignedHeaders(req)
@@ -248,9 +248,9 @@ func PreSignV4(req http.Request, accessKeyID, secretAccessKey, location string, 
 	return &req
 }
 
-// postPresignSignatureV4 - presigned signature for PostPolicy
+// PostPresignSignatureV4 - presigned signature for PostPolicy
 // requests.
-func postPresignSignatureV4(policyBase64 string, t time.Time, secretAccessKey, location string) string {
+func PostPresignSignatureV4(policyBase64 string, t time.Time, secretAccessKey, location string) string {
 	// Get signining key.
 	signingkey := getSigningKey(secretAccessKey, location, t)
 	// Calculate signature.
@@ -282,7 +282,7 @@ func SignV4(req http.Request, accessKeyID, secretAccessKey, location string) *ht
 	signingKey := getSigningKey(secretAccessKey, location, t)
 
 	// Get credential string.
-	credential := getCredential(accessKeyID, location, t)
+	credential := GetCredential(accessKeyID, location, t)
 
 	// Get all signed headers.
 	signedHeaders := getSignedHeaders(req)

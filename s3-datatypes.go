@@ -203,3 +203,11 @@ type listObjectPartsResult struct {
 
 	EncodingType string
 }
+
+// postResponse container for PostObject response.
+type postResponse struct {
+	Bucket   string // Name of the bucket the object was stored in.
+	ETag     string
+	Key      string // The object key name.
+	Location string // URI of the object.
+}

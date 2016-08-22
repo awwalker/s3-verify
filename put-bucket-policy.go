@@ -128,13 +128,14 @@ func mainPutBucketPolicy(config ServerConfig, curTest int) bool {
 	}
 
 	// Set a policy for all buckets created by s3verify.
-	for i, bucket := range s3verifyBuckets[1:] {
+	for i, bucket := range s3verifyBuckets[:3] {
 		// Spin scanBar
 		scanBar(message)
 
 		bucketName := bucket.Name
 		// Gather the policy you wish to create.
 		setPolicy := policies[i]
+		// Create the statements required.
 		statements := policy.SetPolicy([]policy.Statement{}, setPolicy, bucketName, "")
 		bucketPolicy := policy.BucketAccessPolicy{
 			Version:    "2008-10-17",

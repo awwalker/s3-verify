@@ -73,6 +73,13 @@ var preparedTests = []APItest{
 		Critical: false, // This object is not needed for future tests.
 	},
 
+	// Tests for PostObject API.
+	APItest{
+		Test:     mainPostObject,
+		Extended: false, // PostObject is not an extended API.
+		Critical: false, // This test does not affect other tests.
+	},
+
 	// Tests for HeadBucket API.
 	APItest{
 		Test:     mainHeadBucket,
@@ -288,6 +295,13 @@ var unpreparedTests = []APItest{
 		Test:     mainPresignedPutObject,
 		Extended: false, // PutObject presigned is not an extended API.
 		Critical: true,  // This object is necessary for future tests.
+	},
+
+	// Tests for PostObject API.
+	APItest{
+		Test:     mainPostObject,
+		Extended: false, // PostObject is not an extended API.
+		Critical: false, // This test does not affect other tests.
 	},
 
 	// Tests for HeadBucket API.
