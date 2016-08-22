@@ -177,7 +177,7 @@ func makeTargetURL(endpoint, bucketName, objectName, region string, queryValues 
 func verifyDate(respDateStr string) error {
 	_, err := time.Parse(http.TimeFormat, respDateStr)
 	if err != nil {
-		err = fmt.Errorf("Invalid time format recieved, expected http.TimeFormat")
+		err = fmt.Errorf("Invalid time format received, expected http.TimeFormat")
 		return err
 	}
 	return nil

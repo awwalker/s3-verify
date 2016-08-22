@@ -73,7 +73,7 @@ func verifyStatusHeadObjectIfUnModifiedSince(respStatusCode, expectedStatusCode 
 	return nil
 }
 
-// verifyBodyHeadObjectIfUnModifiedSince - verify the body returned is emtpy.
+// verifyBodyHeadObjectIfUnModifiedSince - verify the body returned is empty.
 func verifyBodyHeadObjectIfUnModifiedSince(resBody io.Reader) error {
 	body, err := ioutil.ReadAll(resBody)
 	if err != nil {

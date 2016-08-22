@@ -110,7 +110,7 @@ func verifyBodyGetObject(resBody io.Reader, expectedBody []byte, expectedError E
 		}
 		// Compare what was created to be uploaded and what is contained in the response body.
 		if !bytes.Equal(body, expectedBody) {
-			err := fmt.Errorf("Unexpected Body Recieved: wanted %v, got %v", string(expectedBody), string(body))
+			err := fmt.Errorf("Unexpected Body Received: wanted %v, got %v", string(expectedBody), string(body))
 			return err
 		}
 		return nil

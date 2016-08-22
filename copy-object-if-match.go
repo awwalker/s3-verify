@@ -108,7 +108,7 @@ func verifyBodyCopyObjectIfMatch(resBody io.Reader, expectedError ErrorResponse)
 // verifyStatusCopyObjectIfMatch - Verify that the status returned matches what is expected.
 func verifyStatusCopyObjectIfMatch(respStatusCode, expectedStatusCode int) error {
 	if respStatusCode != expectedStatusCode {
-		err := fmt.Errorf("Unexpected Status Recieved: wanted %v, got %v", expectedStatusCode, respStatusCode)
+		err := fmt.Errorf("Unexpected Status Received: wanted %v, got %v", expectedStatusCode, respStatusCode)
 		return err
 	}
 	return nil

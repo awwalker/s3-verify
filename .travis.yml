@@ -13,7 +13,10 @@ env:
 go:
 - 1.6
 
+before_script:
+- go get -u github.com/client9/misspell/cmd/misspell
 script:
 - diff -au <(gofmt -d .) <(printf "")
 - go vet ./...
+- misspell cmd/*
 

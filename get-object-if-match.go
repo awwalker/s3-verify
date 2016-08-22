@@ -91,7 +91,7 @@ func verifyBodyGetObjectIfMatch(resBody io.Reader, objectBody []byte, shouldFail
 			return err
 		}
 		if !shouldFail && !bytes.Equal(body, objectBody) { // Test should pass ensure body is what was uploaded.
-			err := fmt.Errorf("Unexpected Body Recieved: wanted %v, got %v", string(objectBody), string(body))
+			err := fmt.Errorf("Unexpected Body Received: wanted %v, got %v", string(objectBody), string(body))
 			return err
 		}
 	}

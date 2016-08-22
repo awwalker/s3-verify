@@ -98,7 +98,7 @@ func verifyBodyPutObject(resBody io.Reader) error {
 	}
 	// A PUT request should give back an empty body.
 	if !bytes.Equal(body, []byte{}) {
-		err := fmt.Errorf("Unexpected Body Recieved: expected empty body but recieved: %v", string(body))
+		err := fmt.Errorf("Unexpected Body Received: expected empty body but received: %v", string(body))
 		return err
 	}
 	return nil

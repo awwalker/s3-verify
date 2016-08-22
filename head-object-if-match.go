@@ -79,7 +79,7 @@ func verifyBodyHeadObjectIfMatch(resBody io.Reader) error {
 		return err
 	}
 	if !bytes.Equal(body, []byte{}) {
-		err := fmt.Errorf("Unexpected Body Recieved: HEAD requests should not return a body, but got back: %v", string(body))
+		err := fmt.Errorf("Unexpected Body Received: HEAD requests should not return a body, but got back: %v", string(body))
 		return err
 	}
 	return nil
