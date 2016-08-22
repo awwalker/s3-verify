@@ -17,28 +17,18 @@
 package main
 
 import (
+	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/minio/minio-go"
 )
 
 // cleanObjects - use minio-go to remove any s3verify created objects.
-func cleanObjects(config ServerConfig, client *minio.Client, bucketName string) error {
-	message := "CleanUp (Removing Objects):"
+func cleanObjects(client *minio.Client, bucketName string) error {
+	message := fmt.Sprintf("CleanUp %s (Removing Objects):", bucketName)
 	// Spin scanBar
 	scanBar(message)
-
-	// Check that the bucket actually exists first.
-	bucketExists, err := client.BucketExists(bucketName)
-	if err != nil {
-		printMessage(message, err)
-		return err
-	}
-	// Exit successfully if bucket does not exist.
-	if !bucketExists {
-		printMessage(message, nil)
-		return nil
-	}
 
 	doneCh := make(chan struct{})
 	defer close(doneCh)
@@ -59,21 +49,10 @@ func cleanObjects(config ServerConfig, client *minio.Client, bucketName string) 
 }
 
 // cleanBucket - use minio-go to cleanup any s3verify created buckets.
-func cleanBucket(config ServerConfig, client *minio.Client, bucketName string) error {
-	message := "CleanUp (Removing Buckets):"
+func cleanBucket(client *minio.Client, bucketName string) error {
+	message := fmt.Sprintf("CleanUp %s (Removing Bucket):", bucketName)
 	// Spin scanBar
 	scanBar(message)
-	// Check that the bucket actually exists first.
-	bucketExists, err := client.BucketExists(bucketName)
-	if err != nil {
-		printMessage(message, nil)
-		return nil
-	}
-	// Exit successfully if bucket does not exist.
-	if !bucketExists {
-		printMessage(message, nil)
-		return nil
-	}
 	if err := client.RemoveBucket(bucketName); err != nil {
 		return err
 	}
@@ -82,7 +61,7 @@ func cleanBucket(config ServerConfig, client *minio.Client, bucketName string) e
 }
 
 // cleanS3verify - purges the given bucketName of objects then removes the bucket.
-func cleanS3verify(config ServerConfig, bucketName string) error {
+func cleanS3verify(config ServerConfig, bucketPrefix string) error {
 	hostURL, err := url.Parse(config.Endpoint)
 	if err != nil {
 		return err
@@ -96,11 +75,20 @@ func cleanS3verify(config ServerConfig, bucketName string) error {
 	if err != nil {
 		return err
 	}
-	if err := cleanObjects(config, client, bucketName); err != nil {
+	buckets, err := client.ListBuckets()
+	if err != nil {
 		return err
 	}
-	if err := cleanBucket(config, client, bucketName); err != nil {
-		return err
+	// Delete all s3verify objects and buckets.
+	for _, bucket := range buckets {
+		if strings.HasPrefix(bucket.Name, bucketPrefix) {
+			if err := cleanObjects(client, bucket.Name); err != nil {
+				return err
+			}
+			if err := cleanBucket(client, bucket.Name); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
