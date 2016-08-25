@@ -33,6 +33,10 @@ var (
 	globalSuffix        string        // The suffix to append to all s3verify created objects and buckets.
 )
 
+const (
+	globalS3verifyVersion = "1.0.0" // Current s3verify version.
+)
+
 // lockedRandSource provides protected rand source, implements rand.Source interface.
 type lockedRandSource struct {
 	lk  sync.Mutex

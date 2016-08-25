@@ -37,7 +37,6 @@ import (
 
 const (
 	appName       = "s3verify"
-	appVersion    = "0.1.0"
 	letterIdxBits = 6                    // 6 bits to represetn a letter index
 	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting into 63 bits.
@@ -50,7 +49,7 @@ const (
 //		Minio (OS; ARCH) LIB/VER APP/VER
 const (
 	appUserAgentPrefix = "Minio (" + runtime.GOOS + "; " + runtime.GOARCH + ") "
-	appUserAgent       = appUserAgentPrefix + appName + "/" + appVersion
+	appUserAgent       = appUserAgentPrefix + appName + "/" + globalS3verifyVersion
 )
 
 // List of success status.

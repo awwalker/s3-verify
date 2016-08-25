@@ -42,8 +42,11 @@ var (
 var s3verifyHelpTemplate = `NAME:
 	{{.Name}} - {{.Usage}}
 
+VERSION: {{.Version}}
+
 USAGE:
 	{{.Name}} {{if .Flags}}[FLAGS...] {{end}}
+
 GLOBAL FLAGS:
 {{range .Flags}}{{.}}
 {{end}}
@@ -79,6 +82,7 @@ func registerApp() *cli.App {
 	app.CustomAppHelpTemplate = s3verifyHelpTemplate // Custom help template defined above.
 	app.CommandNotFound = commandNotFound            // Custom commandNotFound function defined above.
 	app.Action = callAllAPIs                         // Command to run if no commands are explicitly passed.
+	app.Version = globalS3verifyVersion
 	return app
 }
 

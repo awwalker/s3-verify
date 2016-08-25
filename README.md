@@ -19,7 +19,7 @@ $ s3verify [FLAGS]
 ### Flags
 ``s3verify`` implements the following flags:
 ```
-    --help      -h      Provides documentation for a given command.
+    --help      -h      Prints the help screen.
     --access    -a      Allows user to input their AWS access key.
     --secret    -s      Allows user to input their AWS secret access key.
     --url       -u      Allows user to input the host URL of the server they wish to test.
@@ -33,6 +33,7 @@ $ s3verify [FLAGS]
     --prepare           Allows user to create a unique, reusable testing environment before testing. 
                         (Must be used with id)
     --clean             Allows user to remove all s3verify created objects and buckets. 
+    --version           Prints the version.
 ```
 
 ### Environment Variables

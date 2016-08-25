@@ -64,4 +64,8 @@ var globalFlags = []cli.Flag{
 		Name:  "id",
 		Usage: "Provide a unique suffix for test objects/buckets",
 	},
+	cli.BoolFlag{
+		Name:  "version",
+		Usage: "Print version",
+	},
 }
