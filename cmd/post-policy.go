@@ -16,7 +16,10 @@
 
 package cmd
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 const expirationDateFormat = "2006-01-02T15:04:05.999Z"
 
@@ -26,14 +29,21 @@ const expirationDateFormat = "2006-01-02T15:04:05.999Z"
 // newPostPolicyBytes - creates a bare bones postpolicy string with key and bucket matches.
 func newPostPolicyBytes(credential, bucketName, objectKey string, expiration time.Time) []byte {
 	t := time.Now().UTC()
-	expirationStr := `"expiration":` + `"` + expiration.Format(expirationDateFormat) + `"`
-	bucketConditionStr := `["eq", "$bucket", ` + `"` + bucketName + `"]`
-	keyConditionStr := `["eq", "$key", "` + objectKey + `"]`
+	// Add the expiration date.
+	expirationStr := fmt.Sprintf(`"expiration": "%s"`, expiration.Format(expirationDateFormat))
+	// Add the bucket condition, only accept buckets equal to the one passed.
+	bucketConditionStr := fmt.Sprintf(`["eq", "$bucket", "%s"]`, bucketName)
+	// Add the key condition, only accept keys equal to the one passed.
+	keyConditionStr := fmt.Sprintf(`["eq", "$key", "%s"]`, objectKey)
+	// Add the algorithm condition, only accept AWS SignV4 Sha256.
 	algorithmConditionStr := `["eq", "$x-amz-algorithm", "AWS4-HMAC-SHA256"]`
-	dateConditionStr := `["eq", "$x-amz-date",` + `"` + t.Format(iso8601DateFormat) + `"]`
-	credentialConditionStr := `["eq", "$x-amz-credential",` + `"` + credential + `"]`
+	// Add the date condition, only accept the current date.
+	dateConditionStr := fmt.Sprintf(`["eq", "$x-amz-date", "%s"]`, t.Format(iso8601DateFormat))
+	// Add the credential string, only accept the credential passed.
+	credentialConditionStr := fmt.Sprintf(`["eq", "$x-amz-credential", "%s"]`, credential)
 
-	conditionStr := `"conditions":[` + bucketConditionStr + "," + keyConditionStr + "," + algorithmConditionStr + "," + dateConditionStr + "," + credentialConditionStr + "]"
+	// Combine all conditions into one string.
+	conditionStr := fmt.Sprintf(`"conditions":[%s, %s, %s, %s, %s]`, bucketConditionStr, keyConditionStr, algorithmConditionStr, dateConditionStr, credentialConditionStr)
 	retStr := "{"
 	retStr = retStr + expirationStr + ","
 	retStr = retStr + conditionStr

@@ -150,8 +150,9 @@ func (c ServerConfig) newRequest(method string, customReq Request) (req *http.Re
 		req.ContentLength = customReq.contentLength
 	}
 
-	// Sign the request.
-	if customReq.presignURL {
+	// Sign the request if needed.
+	if customReq.presignURL && method == "POST" { // These requests would have already been signed.
+	} else if customReq.presignURL {
 		// Presign the request.
 		req = signv4.PreSignV4(*req, c.Access, c.Secret, c.Region, customReq.expires)
 	} else {

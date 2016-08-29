@@ -77,7 +77,7 @@ var preparedTests = []APItest{
 	APItest{
 		Test:     mainPostObject,
 		Extended: false, // PostObject is not an extended API.
-		Critical: false, // This test does not affect other tests.
+		Critical: true,  // This test does affect other tests.
 	},
 
 	// Tests for HeadBucket API.
@@ -301,7 +301,7 @@ var unpreparedTests = []APItest{
 	APItest{
 		Test:     mainPostObject,
 		Extended: false, // PostObject is not an extended API.
-		Critical: false, // This test does not affect other tests.
+		Critical: true,  // This test does affect other tests.
 	},
 
 	// Tests for HeadBucket API.

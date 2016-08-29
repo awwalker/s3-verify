@@ -82,7 +82,7 @@ func verifyBodyRemoveBucket(resBody io.Reader, expectedError ErrorResponse) erro
 			return err
 		}
 		if errResponse.Message != expectedError.Message {
-			err := fmt.Errorf("Unexpected Error: %v", errResponse.Message)
+			err := fmt.Errorf("Unexpected Error Message: wanted %v, got %v", expectedError.Message, errResponse.Message)
 			return err
 		}
 	}
