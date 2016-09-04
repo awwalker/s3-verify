@@ -34,7 +34,6 @@ var globalFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:  "region, r",
-		Value: globalDefaultRegion,
 		Usage: `Set AWS S3 region`,
 		// Allow env. variables to used as well as flags.
 		EnvVar: "S3_REGION",

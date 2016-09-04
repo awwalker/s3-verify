@@ -91,11 +91,17 @@ func registerApp() *cli.App {
 
 // makeConfigFromCtx - parse the passed context to create a new config.
 func makeConfigFromCtx(ctx *cli.Context) (*ServerConfig, error) {
+	var config *ServerConfig
 	if ctx.GlobalString("access") != "" &&
 		ctx.GlobalString("secret") != "" &&
 		ctx.GlobalString("url") != "" {
-		config := newServerConfig(ctx)
-		return config, nil
+		config = newServerConfig(ctx)
+	}
+	// Set the region for the config here.
+	// Default to us-west-1 for AWS hosts and us-east-1 for all others.
+	// Unless specified by the --region flag.
+	if err := setRegion(config); err != nil {
+		return nil, fmt.Errorf("Unable to create config.")
 	}
 	// If config cannot be created successfully show help and exit immediately.
 	return nil, fmt.Errorf("Unable to create config.")
@@ -109,6 +115,7 @@ func callAllAPIs(ctx *cli.Context) {
 		// Could not create a config. Exit immediately.
 		cli.ShowAppHelpAndExit(ctx, 1)
 	}
+
 	// Test that the given endpoint is reachable with a simple GET request.
 	if err := verifyHostReachable(config.Endpoint, config.Region); err != nil {
 		// If the provided endpoint is unreachable error out instantly.

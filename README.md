@@ -33,15 +33,15 @@ $ s3verify [FLAGS]
     --secret    -s      Allows user to input their AWS secret access key.
     --url       -u      Allows user to input the host URL of the server they wish to test.
     --region    -r      Allows user to change the region of the AWS host they are using. 
-                        Please do not use 'us-east-1' with AWS servers or automatic cleanup may fail. 
-                        Defaults to 'us-east-1'.
+                        Defaults to 'us-east-1' for non AWS hosts and us-west-1 for AWS hosts
+                        (to prevent propogation issues).
     --verbose   -v      Allows user to trace the HTTP requests and responses sent by s3verify.
     --extended          Allows user to decide whether to test only basic or full API compliance.
-    --id                Allows user to provide a unique suffix s3verify created objects and buckets. 
-                        (Must be used with prepare)
     --prepare           Allows user to create a unique, reusable testing environment before testing. 
-                        (Must be used with id)
+                        Can be used with --id to uniquely identify an environment.
     --clean             Allows user to remove all s3verify created objects and buckets. 
+    --id                Allows user to reuse an environment created by --prepare instead of freshly
+                        creating a new environment.
     --version           Prints the version.
 ```
 
@@ -75,4 +75,16 @@ If a test fails you can use the verbose flag (--verbose) to check the request an
 
 ```sh
 $ s3verify -a YOUR_ACCESS_KEY -s YOUR_SECRET_KEY https://play.minio.io:9000 --verbose
+```
+
+Using --prepare and --id effectively to create an environment with a known label.
+```sh
+$ s3verify -a YOUR_ACCESS_KEY -s YOUR_SECRET_KEY https://play.minio.io:9000 --prepare --id my-test
+
+$ s3verify -a YOUR_ACCESS_KEY -s YOUR_SECRET_KEY https://play.minio.io:9000 --id my-test
+```
+
+Removing a reuable, prepared environment.
+```sh
+$ s3verify -a YOUR_ACCESS_KEY -s YOUR_SECRET_KEY https://play.minio.io:9000 --clean my-test
 ```

@@ -19,6 +19,7 @@ package cmd
 import (
 	"net"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/minio/cli"
@@ -53,9 +54,27 @@ func newServerConfig(ctx *cli.Context) *ServerConfig {
 		},
 	}
 	if ctx.Bool("verbose") || ctx.GlobalBool("verbose") {
-
 		// Set up new tracer.
 		serverCfg.Client.Transport = httptracer.GetNewTraceTransport(newTraceV4(), http.DefaultTransport)
 	}
 	return serverCfg
+}
+
+// setRegion - set the region of the new config.
+func setRegion(config *ServerConfig) error {
+	endpointURL, err := url.Parse(config.Endpoint)
+	if err != nil {
+		return err
+	}
+	// If no region was provided set it here.
+	if config.Region == "" {
+		// If this is an AmazonHost default the region to us-west-1.
+		if isAmazonEndpoint(endpointURL) {
+			config.Region = "us-west-1"
+		} else {
+			// Otherwise default to us-east-1.
+			config.Region = globalDefaultRegion
+		}
+	}
+	return nil
 }
