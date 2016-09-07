@@ -51,7 +51,7 @@ var preparedTests = []APItest{
 	APItest{
 		Test:     mainPutBucketPolicy,
 		Extended: false, // PutBucketPolicy is not an extended API.
-		Critical: true,  // This test does affect future tests.
+		Critical: false, // This test does not affect future tests.
 	},
 
 	// Tests for GetBucketPolicy API.
@@ -243,6 +243,11 @@ var preparedTests = []APItest{
 		Extended: false, // RemoveObject is not an extended API.
 		Critical: true,  // This test does affect future tests.
 	},
+	APItest{
+		Test:     mainRemoveObjectDNE,
+		Extended: false, // RemoveObject is not an extended API.
+		Critical: false, // This test does not affect future tests.
+	},
 
 	// Tests for RemoveBucket API.
 	APItest{
@@ -275,7 +280,7 @@ var unpreparedTests = []APItest{
 	APItest{
 		Test:     mainPutBucketPolicy,
 		Extended: false, // PutBucketPolicy is not an extended API.
-		Critical: true,  // This test does affect future tests.
+		Critical: false, // This test does not affect future tests.
 	},
 
 	// Tests for GetBucketPolicy API.
@@ -465,6 +470,11 @@ var unpreparedTests = []APItest{
 		Test:     mainRemoveObjectExists,
 		Extended: false, // Remove Object test must be run.
 		Critical: true,  // Remove Object test must pass for future tests.
+	},
+	APItest{
+		Test:     mainRemoveObjectDNE,
+		Extended: false, // RemoveObject is not an extended API.
+		Critical: false, // This test does not affect future tests.
 	},
 
 	// Tests for RemoveBucket API.

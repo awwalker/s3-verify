@@ -22,11 +22,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
+	"time"
 )
 
 // newRemoveObjectReq - Create a new DELETE object HTTP request.
-func newRemoveObjectReq(config ServerConfig, bucketName, objectName string) (Request, error) {
+func newRemoveObjectReq(bucketName, objectName string) (Request, error) {
 	var removeObjectReq = Request{
 		customHeader: http.Header{},
 	}
@@ -99,80 +101,119 @@ func mainRemoveObjectExists(config ServerConfig, curTest int) bool {
 	scanBar(message)
 	// Only remove objects from s3verify created buckets.
 	// Only remove s3verify created objects.
-	for _, bucket := range s3verifyBuckets {
-		for _, object := range s3verifyObjects {
-			// Spin scanBar
-			scanBar(message)
-			// Create a new request.
-			req, err := newRemoveObjectReq(config, bucket.Name, object.Key)
-			if err != nil {
-				printMessage(message, err)
-				return false
-			}
-			// Execute the request.
-			res, err := config.execRequest("DELETE", req)
-			if err != nil {
-				printMessage(message, err)
-				return false
-			}
-			defer closeResponse(res)
-			// Verify the response.
-			if err := removeObjectVerify(res, http.StatusNoContent); err != nil {
-				printMessage(message, err)
-				return false
-			}
-			// Spin scanBar
-			scanBar(message)
+	// First remove all PutObject test created objects.
+	bucketName := s3verifyBuckets[0].Name
+	for _, object := range s3verifyObjects {
+		// Spin scanBar
+		scanBar(message)
+		// Create a new request.
+		req, err := newRemoveObjectReq(bucketName, object.Key)
+		if err != nil {
+			printMessage(message, err)
+			return false
+		}
+		// Execute the request.
+		res, err := config.execRequest("DELETE", req)
+		if err != nil {
+			printMessage(message, err)
+			return false
+		}
+		defer closeResponse(res)
+		// Verify the response.
+		if err := removeObjectVerify(res, http.StatusNoContent); err != nil {
+			printMessage(message, err)
+			return false
+		}
+		// Spin scanBar
+		scanBar(message)
+	}
+	// Remove all MultipartObject test objects.
+	for _, object := range multipartObjects {
+		// Spin scanBar
+		scanBar(message)
+		// Create a new request.
+		req, err := newRemoveObjectReq(bucketName, object.Key)
+		if err != nil {
+			printMessage(message, err)
+			return false
+		}
+		// Execute the request.
+		res, err := config.execRequest("DELETE", req)
+		if err != nil {
+			printMessage(message, err)
+			return false
+		}
+		defer closeResponse(res)
+		// Verify the response.
+		if err := removeObjectVerify(res, http.StatusNoContent); err != nil {
+			printMessage(message, err)
+			return false
+		}
+		// Spin scanBar
+		scanBar(message)
+	}
 
+	// Remove all copied objects. These exist in a different bucket.
+	bucketName = s3verifyBuckets[1].Name
+	for _, object := range copyObjects {
+		// Spin scanBar
+		scanBar(message)
+		// Create a new request.
+		req, err := newRemoveObjectReq(bucketName, object.Key)
+		if err != nil {
+			printMessage(message, err)
+			return false
 		}
-		for _, object := range copyObjects {
-			// Spin scanBar
-			scanBar(message)
-			// Create a new request.
-			req, err := newRemoveObjectReq(config, bucket.Name, object.Key)
-			if err != nil {
-				printMessage(message, err)
-				return false
-			}
-			// Execute the request.
-			res, err := config.execRequest("DELETE", req)
-			if err != nil {
-				printMessage(message, err)
-				return false
-			}
-			defer closeResponse(res)
-			// Verify the response.
-			if err := removeObjectVerify(res, http.StatusNoContent); err != nil {
-				printMessage(message, err)
-				return false
-			}
-			// Spin scanBar
-			scanBar(message)
+		// Execute the request.
+		res, err := config.execRequest("DELETE", req)
+		if err != nil {
+			printMessage(message, err)
+			return false
 		}
-		for _, object := range multipartObjects {
-			// Spin scanBar
-			scanBar(message)
-			// Create a new request.
-			req, err := newRemoveObjectReq(config, bucket.Name, object.Key)
-			if err != nil {
-				printMessage(message, err)
-				return false
-			}
-			// Execute the request.
-			res, err := config.execRequest("DELETE", req)
-			if err != nil {
-				printMessage(message, err)
-				return false
-			}
-			defer closeResponse(res)
-			// Verify the response.
-			if err := removeObjectVerify(res, http.StatusNoContent); err != nil {
-				printMessage(message, err)
-				return false
-			}
-			// Spin scanBar
-			scanBar(message)
+		defer closeResponse(res)
+		// Verify the response.
+		if err := removeObjectVerify(res, http.StatusNoContent); err != nil {
+			printMessage(message, err)
+			return false
 		}
+		// Spin scanBar
+		scanBar(message)
+	}
+	// Test passed.
+	printMessage(message, nil)
+	return true
+}
+
+// mainRemoveObjectDNE - Test the RemoveObject API when the object does not exist.
+func mainRemoveObjectDNE(config ServerConfig, curTest int) bool {
+	message := fmt.Sprintf("[%02d/%d] RemoveObject (Object DNE):", curTest, globalTotalNumTest)
+	// Spin scanBar
+	scanBar(message)
+	bucketName := s3verifyBuckets[0].Name
+	object := ObjectInfo{
+		Key: randString(60, rand.NewSource(time.Now().UnixNano()), ""),
+	}
+	// Create a new request.
+	req, err := newRemoveObjectReq(bucketName, object.Key)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Execute the request.
+	res, err := config.execRequest("DELETE", req)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	defer closeResponse(res)
+	// Spin scanBar
+	scanBar(message)
+	// Verify the response.
+	if err := removeObjectVerify(res, http.StatusNoContent); err != nil {
+		printMessage(message, err)
+		return false
 	}
 	// Spin scanBar
 	scanBar(message)
