@@ -88,7 +88,7 @@ func setGlobalsFromContext(ctx *cli.Context) error {
 		}
 	}
 	// Standard suffix.
-	suffix := "tmp-bucket"
+	suffix := "tmp-bkt"
 	if ctx.GlobalString("id") != "" {
 		suffix = ctx.GlobalString("id")
 	}
