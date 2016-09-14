@@ -268,39 +268,33 @@ func mainPutObjectStream(config ServerConfig, curTest int) bool {
 	bucket := s3verifyBuckets[0]
 	// Spin scanBar
 	scanBar(message)
-	// TODO: need to update to 1001 once this is production ready.
-	// Upload 1001 objects with 1 byte each to check the ListObjects API with.
-	for i := 0; i < 101; i++ {
-		// Spin scanBar
-		scanBar(message)
-		object := &ObjectInfo{}
-		object.Key = "s3verify/put/object/" + strconv.Itoa(i)
-		// Create 60 bytes worth of random data for each object.
-		body := randString(60, rand.NewSource(time.Now().UnixNano()), "")
-		object.Body = []byte(body)
-		// Create a new request.
-		req, err := newPutObjectStreamingReq(config, bucket.Name, object.Key, object.Body)
-		if err != nil {
-			printMessage(message, err)
-			return false
-		}
-		// Execute the request.
-		res, err := config.execRequest("PUT", req)
-		if err != nil {
-			printMessage(message, err)
-			return false
-		}
-		defer closeResponse(res)
-		// Verify the response.
-		if err := putObjectVerify(res, http.StatusOK); err != nil {
-			printMessage(message, err)
-			return false
-		}
-		// Add the new object to the list of objects.
-		s3verifyObjects = append(s3verifyObjects, object)
-		// Spin scanBar
-		scanBar(message)
+	object := &ObjectInfo{}
+	// Only need to upload one new object.
+	object.Key = "s3verify/put/object/stream"
+	// Create 60 bytes worth of random data for each object.
+	body := randString(60, rand.NewSource(time.Now().UnixNano()), "")
+	object.Body = []byte(body)
+	// Create a new request.
+	req, err := newPutObjectStreamingReq(config, bucket.Name, object.Key, object.Body)
+	if err != nil {
+		printMessage(message, err)
+		return false
 	}
+	// Execute the request.
+	res, err := config.execRequest("PUT", req)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	defer closeResponse(res)
+	// Verify the response.
+	if err := putObjectVerify(res, http.StatusOK); err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Add the new object to the list of objects.
+	s3verifyObjects = append(s3verifyObjects, object)
+
 	// Spin scanBar
 	scanBar(message)
 	// Test passed.

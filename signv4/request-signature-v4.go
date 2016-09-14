@@ -313,7 +313,7 @@ func SignV4(req http.Request, accessKeyID, secretAccessKey, location string) *ht
 }
 
 // generateSignedChunks - generates a data stream with streamed chunk metadata
-func generateSignedChunks(body io.Reader, seed, secretKey string, chunkSize int64) io.ReadCloser {
+func generateSignedChunks(body io.Reader, seed, region, secretKey string, chunkSize int64) io.ReadCloser {
 	var stream []byte
 	for {
 		buffer := make([]byte, chunkSize)
@@ -326,7 +326,7 @@ func generateSignedChunks(body io.Reader, seed, secretKey string, chunkSize int6
 		// Get scope.
 		scope := strings.Join([]string{
 			currTime.Format(yyyymmdd),
-			"us-east-1",
+			region,
 			"s3",
 			"aws4_request",
 		}, "/")
@@ -339,8 +339,8 @@ func generateSignedChunks(body io.Reader, seed, secretKey string, chunkSize int6
 		stringToSign = stringToSign + hex.EncodeToString(sum256(buffer[:n]))
 
 		date := sumHMAC([]byte("AWS4"+secretKey), []byte(currTime.Format(yyyymmdd)))
-		region := sumHMAC(date, []byte("us-east-1"))
-		service := sumHMAC(region, []byte("s3"))
+		regionHMAC := sumHMAC(date, []byte(region))
+		service := sumHMAC(regionHMAC, []byte("s3"))
 		signingKey := sumHMAC(service, []byte("aws4_request"))
 
 		seed = hex.EncodeToString(sumHMAC(signingKey, []byte(stringToSign)))
@@ -401,7 +401,7 @@ func StreamingSignV4(req http.Request, accessKeyID, secretAccessKey, location st
 	req.Header.Set("Authorization", auth)
 
 	// Rebuild the request body after signature signing to deliver correct chunk metadata
-	req.Body = generateSignedChunks(req.Body, signature, secretAccessKey, chunkSize)
+	req.Body = generateSignedChunks(req.Body, signature, location, secretAccessKey, chunkSize)
 
 	return &req
 }
