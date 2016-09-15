@@ -112,26 +112,22 @@ func callAllAPIs(ctx *cli.Context) {
 	// Determine whether or not extended tests will be run.
 	testExtended := ctx.GlobalBool("extended")
 	// If a test environment is asked for prepare it now.
-	if ctx.GlobalBool("prepare") {
-		// Create a prepared testing environment with 1 bucket and 1001 objects.
-		_, err := mainPrepareS3Verify(*config)
+	if ctx.GlobalString("reuse") != "" {
+		bucketName := "s3verify-" + globalSuffix
+		console.Printf("S3Verify attempting to reuse %s to test AWS S3 V4 signature compatibility.\n", bucketName)
+		// Reuse an already prepared environment or create a new one.
+		err := mainReuseS3Verify(*config)
 		if err != nil {
 			console.Fatalln(err)
 		}
-		console.Printf("Please run: S3_URL=%s S3_ACCESS=%s S3_SECRET=%s s3verify --id %s\n", config.Endpoint, config.Access, config.Secret, globalSuffix)
+		console.Printf("S3Verify starting testing:\n")
+		runPreparedTests(*config, testExtended)
 	} else if ctx.GlobalString("clean") != "" { // Clean any previously --prepare(d) tests up.
 		// Retrieve the bucket to be cleaned up.
 		bucketName := "s3verify-" + ctx.GlobalString("clean")
 		if err := cleanS3verify(*config, bucketName); err != nil {
 			console.Fatalln(err)
 		}
-	} else if ctx.GlobalString("id") != "" { // If an id is provided assume that this is an already prepared bucket and use it as such.
-		bucketName := "s3verify-" + globalSuffix
-		console.Printf("S3verify attempting to use %s to test AWS S3 V4 signature compatibility.\n", bucketName)
-		if err := validateBucket(*config, bucketName); err != nil {
-			console.Fatalln(err)
-		}
-		runPreparedTests(*config, testExtended)
 	} else {
 		// If the user does not use --prepare flag then just run all non preparedTests.
 		runUnPreparedTests(*config, testExtended)

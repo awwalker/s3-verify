@@ -168,7 +168,7 @@ func verifyHeaderPutObject(header http.Header) error {
 	return nil
 }
 
-// TODO: need mainPutObjectPrepared and mainPutObjectUnPrepared.
+// mainPutObjectPrepared - Test the PutObject API in a prepared environment.
 func mainPutObjectPrepared(config ServerConfig, curTest int) bool {
 	message := fmt.Sprintf("[%02d/%d] PutObject:", curTest, globalTotalNumTest)
 	// Use the last bucket created by s3verify itself.

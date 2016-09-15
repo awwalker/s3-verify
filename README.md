@@ -37,11 +37,9 @@ $ s3verify [FLAGS]
                         (to prevent propogation issues).
     --verbose   -v      Allows user to trace the HTTP requests and responses sent by s3verify.
     --extended          Allows user to decide whether to test only basic or full API compliance.
-    --prepare           Allows user to create a unique, reusable testing environment before testing. 
-                        Can be used with --id to uniquely identify an environment.
+    --reuse             Allows user to create a new reusable testing environment or reuse an 
+                        existing environment, by providing a unique id for the environment.
     --clean             Allows user to remove all s3verify created objects and buckets. 
-    --id                Allows user to reuse an environment created by --prepare instead of freshly
-                        creating a new environment.
     --version           Prints the version.
 ```
 
@@ -77,14 +75,15 @@ If a test fails you can use the verbose flag (--verbose) to check the request an
 $ s3verify -a YOUR_ACCESS_KEY -s YOUR_SECRET_KEY https://play.minio.io:9000 --verbose
 ```
 
-Using --prepare and --id effectively to create an environment with a known label.
-```sh
-$ s3verify -a YOUR_ACCESS_KEY -s YOUR_SECRET_KEY https://play.minio.io:9000 --prepare --id my-test
+Setting up and then using a reusable testing environment. 
+After testing is finished the environment is still accessible with --reuse my-test.
 
-$ s3verify -a YOUR_ACCESS_KEY -s YOUR_SECRET_KEY https://play.minio.io:9000 --id my-test
+```sh
+$ s3verify -a YOUR_ACCESS_KEY -s YOUR_SECRET_KEY https://play.minio.io:9000 --reuse my-test
 ```
 
-Removing a reuable, prepared environment.
+Removing a reusable environment.
+
 ```sh
 $ s3verify -a YOUR_ACCESS_KEY -s YOUR_SECRET_KEY https://play.minio.io:9000 --clean my-test
 ```

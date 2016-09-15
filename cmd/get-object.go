@@ -216,7 +216,7 @@ func mainGetObject(config ServerConfig, curTest int) bool {
 
 // mainGetObjectMultipart - test a get object request of a object uploaded via multipart operation
 func mainGetObjectMultipart(config ServerConfig, curTest int) bool {
-	message := fmt.Sprintf("[%02d/%d] GetObject (multipart):", curTest, globalTotalNumTest)
+	message := fmt.Sprintf("[%02d/%d] GetObject (Multipart):", curTest, globalTotalNumTest)
 	// Use the bucket created in the mainPutBucketPrepared Test.
 	// Set the response headers to be overwritten.
 	expectedHeaders := map[string]string{

@@ -75,9 +75,9 @@ var preparedTests = []APItest{
 		Critical: false, // This test does not affect future tests.
 	},
 
-	// Tests for HeadObject API.
+	// Tests for HeadObject API if an environment was prepared.
 	APItest{
-		Test:     mainHeadObject,
+		Test:     mainHeadObjectPrepared,
 		Extended: false, // HeadObject is not an extended API.
 		Critical: true,  // This test affects future tests and must pass.
 	},
@@ -323,7 +323,7 @@ var unpreparedTests = []APItest{
 
 	// Tests for HeadObject API.
 	APItest{
-		Test:     mainHeadObject,
+		Test:     mainHeadObjectUnPrepared,
 		Extended: false, // HeadObject is not an extended API.
 		Critical: true,  // This test affects future tests and must pass.
 	},

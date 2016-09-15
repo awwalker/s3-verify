@@ -52,17 +52,13 @@ var globalFlags = []cli.Flag{
 		Name:  "extended",
 		Usage: "Enable testing of extra S3 APIs",
 	},
-	cli.BoolFlag{
-		Name:  "prepare",
-		Usage: `Prepare a reusable testing environment`,
+	cli.StringFlag{
+		Name:  "reuse",
+		Usage: `Prepare or reuse a testing environment`,
 	},
 	cli.StringFlag{
 		Name:  "clean",
 		Usage: `Remove anything suffixed by the passed id`,
-	},
-	cli.StringFlag{
-		Name:  "id",
-		Usage: "Provide a unique suffix for test objects/buckets",
 	},
 	cli.BoolFlag{
 		Name:  "version",

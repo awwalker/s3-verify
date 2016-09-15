@@ -90,8 +90,8 @@ func setGlobalsFromContext(ctx *cli.Context) error {
 	}
 	// Standard suffix.
 	suffix := "tmp-bkt"
-	if ctx.GlobalString("id") != "" {
-		suffix = ctx.GlobalString("id")
+	if ctx.GlobalString("reuse") != "" {
+		suffix = ctx.GlobalString("reuse")
 	}
 	setGlobals(verbose, numTests, suffix)
 

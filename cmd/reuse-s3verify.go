@@ -18,43 +18,49 @@ package cmd
 
 import (
 	"bytes"
-	"fmt"
 	"math/rand"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/minio/minio-go"
 )
 
 // prepareBucket - Uses minio-go library to create new testing bucket for use by s3verify.
-func prepareBuckets(region string, client *minio.Client) (string, error) {
-	message := "Creating test bucket"
+func prepareBucket(region string, client *minio.Client) (string, error) {
+	reuseMessage := "Reusing test bucket"
 	bucketName := "s3verify-" + globalSuffix
-	// Spin scanBar
-	scanBar(message)
+	preparedBucket := BucketInfo{
+		Name: bucketName,
+	}
+
 	// Check to see if the desired bucket already exists.
 	bucketExists, err := client.BucketExists(bucketName)
 	if err != nil {
-		// The bucket with the given id already exists.
-		printMessage(message, err)
+		printMessage(reuseMessage, err)
 		return "", err
 	}
 	// Exit successfully if bucket already exists.
 	if bucketExists {
-		printMessage(message, nil)
+		// Store the existing bucket for testing.
+		preparedBuckets = append(preparedBuckets, preparedBucket)
+		// Don't print anything for successfully reusable environments.
 		return bucketName, nil
 	}
+	createMessage := "Creating test bucket"
+	// Spin scanBar
+	scanBar(createMessage)
 	// Create the new testing bucket.
 	if err := client.MakeBucket(bucketName, region); err != nil {
-		printMessage(message, err)
+		printMessage(createMessage, err)
 		return "", err
 	}
+	// Store the created bucket for testing.
+	preparedBuckets = append(preparedBuckets, preparedBucket)
 	// Spin scanBar
-	scanBar(message)
+	scanBar(createMessage)
 	// Bucket preparation passed.
-	printMessage(message, nil)
+	printMessage(createMessage, nil)
 	return bucketName, nil
 }
 
@@ -62,110 +68,78 @@ func prepareBuckets(region string, client *minio.Client) (string, error) {
 
 // prepareObjects - Uses minio-go library to create 1001 new testing objects for use by s3verify.
 func prepareObjects(client *minio.Client, bucketName string) error {
-	message := "Creating test objects"
+	createMessage := "Creating test objects"
 	// First check that the bucketName does not already contain the correct number of s3verify objects.
 	var objCount int
 	doneCh := make(chan struct{})
-	objectInfoCh := client.ListObjects(bucketName, "s3verify/", true, doneCh)
-	for _ = range objectInfoCh {
+	// Require all objects stored in the prepared bucket to be of the form 's3verify/put/object/#'.
+	objectInfoCh := client.ListObjects(bucketName, "s3verify/put/object/", true, doneCh)
+	for obj := range objectInfoCh {
 		objCount++
+		preparedObject := &ObjectInfo{
+			Key: obj.Key,
+		}
+		// Store the already created object for testing.
+		preparedObjects = append(preparedObjects, preparedObject)
 	}
 	if objCount == globalNumTestObjects {
-		printMessage(message, nil)
+		//  Don't print anything for successfully prepared environments.
 		return nil
 	}
-	// Spin scanBar
-	scanBar(message)
 	// Upload 1001 objects specifically for the list-objects tests.
 	for i := objCount; i < globalNumTestObjects; i++ {
 		// Spin scanBar
-		scanBar(message)
+		scanBar(createMessage)
 		randomData := randString(60, rand.NewSource(time.Now().UnixNano()), "")
 		objectKey := "s3verify/put/object/" + globalSuffix + strconv.Itoa(i)
+		byteData := []byte(randomData)
+		preparedObject := &ObjectInfo{
+			Key:  objectKey,
+			Body: byteData,
+		}
 		// Create 60 bytes worth of random data for each object.
-		reader := bytes.NewReader([]byte(randomData))
+		reader := bytes.NewReader(byteData)
 		_, err := client.PutObject(bucketName, objectKey, reader, "application/octet-stream")
 		if err != nil {
-			printMessage(message, err)
+			printMessage(createMessage, err)
 			return err
 		}
+		// Store the created object for testing.
+		preparedObjects = append(preparedObjects, preparedObject)
+
 		// Spin scanBar
-		scanBar(message)
+		scanBar(createMessage)
 	}
 	// Spin scanBar
-	scanBar(message)
+	scanBar(createMessage)
 	// Object preparation passed.
-	printMessage(message, nil)
-	return nil
-}
-
-// validateBucket - validates that the bucket passed to s3verify was created by s3verify.
-func validateBucket(config ServerConfig, bucketName string) error {
-	// Create a new minio-go client object.
-	hostURL, err := url.Parse(config.Endpoint)
-	if err != nil {
-		return err
-	}
-	isSecure := hostURL.Scheme == "https"
-	client, err := minio.New(hostURL.Host, config.Access, config.Secret, isSecure)
-	if err != nil {
-		return err
-	}
-	// Validate the buckets name as being created by s3verify.
-	bucketNameParts := strings.Split(bucketName, "-")
-	if bucketNameParts[0] != "s3verify" {
-		err := fmt.Errorf("%s is not an s3verify created bucket. See s3verify --help", bucketName)
-		return err
-	}
-	validBucket := BucketInfo{
-		Name: bucketName,
-	}
-	// Store the validated bucket in the global preparedBuckets array.
-	preparedBuckets = append(preparedBuckets, validBucket)
-
-	// Store the objects s3verify-object- inside this bucket inside the global object array.
-	doneCh := make(chan struct{})
-	objectInfoCh := client.ListObjects(bucketName, "s3verify/", true, doneCh)
-	for objectInfo := range objectInfoCh {
-		object := &ObjectInfo{
-			// If objects are prepared they need to be given the correct metadata to pass listing tests.
-			Key:          objectInfo.Key,
-			ETag:         objectInfo.ETag,
-			LastModified: objectInfo.LastModified,
-		}
-		preparedObjects = append(preparedObjects, object)
-	}
-	// Make sure that enough objects were actually found with the right prefix.
-	if len(preparedObjects) < globalNumTestObjects {
-		err := fmt.Errorf("Not enough test objects found: need at least %d, only found %d", globalNumTestObjects, len(preparedObjects))
-		return err
-	}
+	printMessage(createMessage, nil)
 	return nil
 }
 
 // TODO: Create function using minio-go to upload 1001 parts of a multipart operation.
 
-// mainPrepareS3Verify - Create one new bucket and 1001 objects for s3verify to use in the test.
-func mainPrepareS3Verify(config ServerConfig) (string, error) {
+// mainReuseS3Verify - Create one new buckets and 1001 objects for s3verify to use in the test.
+func mainReuseS3Verify(config ServerConfig) error {
 	// Extract necessary values from the config.
 	hostURL, err := url.Parse(config.Endpoint)
 	if err != nil {
-		return "", err
+		return err
 	}
 	region := config.Region
 	isSecure := hostURL.Scheme == "https"
 	client, err := minio.New(hostURL.Host, config.Access, config.Secret, isSecure)
 	if err != nil {
-		return "", err
+		return err
 	}
-	// Create testing buckets.
-	validBucketName, err := prepareBuckets(region, client)
+	// Create testing bucket if it doesn't already exist.
+	validBucketName, err := prepareBucket(region, client)
 	if err != nil {
-		return "", err
+		return err
 	}
 	// Use the first newly created bucket to store all the objects.
 	if err := prepareObjects(client, validBucketName); err != nil {
-		return "", err
+		return err
 	}
-	return validBucketName, nil
+	return nil
 }

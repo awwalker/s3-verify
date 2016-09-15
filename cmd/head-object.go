@@ -97,11 +97,10 @@ func verifyHeaderHeadObject(header http.Header) error {
 }
 
 // mainHeadObject - test the HeadObject API with no header set.
-func mainHeadObject(config ServerConfig, curTest int) bool {
+func mainHeadObject(config ServerConfig, curTest int, testObjects []*ObjectInfo, bucketName string) bool {
 	message := fmt.Sprintf("[%02d/%d] HeadObject:", curTest, globalTotalNumTest)
 	// All headobject tests are run in s3verify buckets on s3verify created objects.
-	bucketName := s3verifyBuckets[0].Name
-	for _, object := range s3verifyObjects {
+	for _, object := range testObjects {
 		// Spin scanBar
 		scanBar(message)
 		// Create a new HEAD object with no headers.
@@ -144,4 +143,18 @@ func mainHeadObject(config ServerConfig, curTest int) bool {
 	// Test passed.
 	printMessage(message, nil)
 	return true
+}
+
+// mainHeadObjectUnPrepared - Test for HeadObject API when the environment was not previously created.
+func mainHeadObjectUnPrepared(config ServerConfig, curTest int) bool {
+	bucketName := s3verifyBuckets[0].Name
+	testObjects := s3verifyObjects
+	return mainHeadObject(config, curTest, testObjects, bucketName)
+}
+
+// mainHeadObjectPrepared - Test for HeadObject API when the environment was prepared.
+func mainHeadObjectPrepared(config ServerConfig, curTest int) bool {
+	bucketName := preparedBuckets[0].Name
+	testObjects := preparedObjects
+	return mainHeadObject(config, curTest, testObjects, bucketName)
 }
