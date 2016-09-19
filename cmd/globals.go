@@ -35,6 +35,7 @@ var (
 
 const (
 	globalS3verifyVersion = "1.0.0" // Current s3verify version.
+	globalNumTestObjects  = 1001
 )
 
 // lockedRandSource provides protected rand source, implements rand.Source interface.

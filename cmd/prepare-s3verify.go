@@ -28,8 +28,6 @@ import (
 	"github.com/minio/minio-go"
 )
 
-const numTestObjects = 101
-
 // prepareBucket - Uses minio-go library to create new testing bucket for use by s3verify.
 func prepareBuckets(region string, client *minio.Client) (string, error) {
 	message := "Creating test bucket"
@@ -72,13 +70,14 @@ func prepareObjects(client *minio.Client, bucketName string) error {
 	for _ = range objectInfoCh {
 		objCount++
 	}
-	if objCount == numTestObjects {
+	if objCount == globalNumTestObjects {
 		printMessage(message, nil)
 		return nil
 	}
-	// TODO: update this to 1001...for testing purposes it is OK to leave it at 101 for now.
+	// Spin scanBar
+	scanBar(message)
 	// Upload 1001 objects specifically for the list-objects tests.
-	for i := objCount; i < numTestObjects; i++ {
+	for i := objCount; i < globalNumTestObjects; i++ {
 		// Spin scanBar
 		scanBar(message)
 		randomData := randString(60, rand.NewSource(time.Now().UnixNano()), "")
@@ -93,13 +92,8 @@ func prepareObjects(client *minio.Client, bucketName string) error {
 		// Spin scanBar
 		scanBar(message)
 	}
-	randomData := randString(60, rand.NewSource(time.Now().UnixNano()), "")
-	objectKey := "s3verify/list/" + globalSuffix
-	reader := bytes.NewReader([]byte(randomData))
-	_, err := client.PutObject(bucketName, objectKey, reader, "application/octet-stream")
-	if err != nil {
-		printMessage(message, err)
-	}
+	// Spin scanBar
+	scanBar(message)
 	// Object preparation passed.
 	printMessage(message, nil)
 	return nil
@@ -142,8 +136,8 @@ func validateBucket(config ServerConfig, bucketName string) error {
 		preparedObjects = append(preparedObjects, object)
 	}
 	// Make sure that enough objects were actually found with the right prefix.
-	if len(preparedObjects) < numTestObjects {
-		err := fmt.Errorf("Not enough test objects found: need at least %d, only found %d", numTestObjects, len(preparedObjects))
+	if len(preparedObjects) < globalNumTestObjects {
+		err := fmt.Errorf("Not enough test objects found: need at least %d, only found %d", globalNumTestObjects, len(preparedObjects))
 		return err
 	}
 	return nil
@@ -151,7 +145,7 @@ func validateBucket(config ServerConfig, bucketName string) error {
 
 // TODO: Create function using minio-go to upload 1001 parts of a multipart operation.
 
-// mainPrepareS3Verify - Create one new buckets and 1001 objects for s3verify to use in the test.
+// mainPrepareS3Verify - Create one new bucket and 1001 objects for s3verify to use in the test.
 func mainPrepareS3Verify(config ServerConfig) (string, error) {
 	// Extract necessary values from the config.
 	hostURL, err := url.Parse(config.Endpoint)

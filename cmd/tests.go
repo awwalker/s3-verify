@@ -67,25 +67,6 @@ var preparedTests = []APItest{
 		Extended: false, // PutObject is not an extended API.
 		Critical: false, // Because -- has been used this object is not necessary for future tests.
 	},
-	// Tests for PutObject streaming API.
-	APItest{
-		Test:     mainPutObjectStream,
-		Extended: false, // PutObject streaming v4 is not an extended API.
-		Critical: false, // Because -- has been used this object is not necessary for future tests.
-	},
-
-	APItest{
-		Test:     mainPresignedPutObject,
-		Extended: false, // PutObject presigned is not an extended API.
-		Critical: false, // This object is not needed for future tests.
-	},
-
-	// Tests for PostObject API.
-	APItest{
-		Test:     mainPostObject,
-		Extended: false, // PostObject is not an extended API.
-		Critical: true,  // This test does affect other tests.
-	},
 
 	// Tests for HeadBucket API.
 	APItest{
@@ -140,6 +121,25 @@ var preparedTests = []APItest{
 		Critical: false, // This test does not affect future tests.
 	},
 
+	// Tests for PutObject streaming API.
+	APItest{
+		Test:     mainPutObjectStream,
+		Extended: false, // PutObject streaming v4 is not an extended API.
+		Critical: false, // Because -- has been used this object is not necessary for future tests.
+	},
+
+	APItest{
+		Test:     mainPresignedPutObject,
+		Extended: false, // PutObject presigned is not an extended API.
+		Critical: false, // This object is not needed for future tests.
+	},
+
+	// Tests for PostObject API.
+	APItest{
+		Test:     mainPostObject,
+		Extended: false, // PostObject is not an extended API.
+		Critical: true,  // This test does affect other tests.
+	},
 	// Tests for Multipart API.
 	APItest{
 		Test:     mainInitiateMultipartUpload,
@@ -313,25 +313,6 @@ var unpreparedTests = []APItest{
 		Extended: false, // PutObject is not an extended API.
 		Critical: true,  // These objects are necessary for future tests.
 	},
-	// Tests for PutObject Streaming API.
-	APItest{
-		Test:     mainPutObjectStream,
-		Extended: false, // PutObject Streaming V4 is not an extended API.
-		Critical: true,  // These objects are necessary for future tests.
-	},
-
-	APItest{
-		Test:     mainPresignedPutObject,
-		Extended: false, // PutObject presigned is not an extended API.
-		Critical: true,  // This object is necessary for future tests.
-	},
-
-	// Tests for PostObject API.
-	APItest{
-		Test:     mainPostObject,
-		Extended: false, // PostObject is not an extended API.
-		Critical: true,  // This test does affect other tests.
-	},
 
 	// Tests for HeadBucket API.
 	APItest{
@@ -384,6 +365,26 @@ var unpreparedTests = []APItest{
 		Test:     mainListObjectsV2UnPrepared,
 		Extended: false, // ListObjects is not an extended API.
 		Critical: false, // This test does not affect future tests.
+	},
+
+	// Tests for PutObject Streaming API.
+	APItest{
+		Test:     mainPutObjectStream,
+		Extended: false, // PutObject Streaming V4 is not an extended API.
+		Critical: true,  // These objects are necessary for future tests.
+	},
+
+	APItest{
+		Test:     mainPresignedPutObject,
+		Extended: false, // PutObject presigned is not an extended API.
+		Critical: true,  // This object is necessary for future tests.
+	},
+
+	// Tests for PostObject API.
+	APItest{
+		Test:     mainPostObject,
+		Extended: false, // PostObject is not an extended API.
+		Critical: true,  // This test does affect other tests.
 	},
 
 	// Tests for Multipart API.

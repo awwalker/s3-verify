@@ -223,7 +223,7 @@ func mainPutObjectUnPrepared(config ServerConfig, curTest int) bool {
 	scanBar(message)
 	// TODO: need to update to 1001 once this is production ready.
 	// Upload 1001 objects with 1 byte each to check the ListObjects API with.
-	for i := 0; i < 101; i++ {
+	for i := 0; i < globalNumTestObjects; i++ {
 		// Spin scanBar
 		scanBar(message)
 		object := &ObjectInfo{}

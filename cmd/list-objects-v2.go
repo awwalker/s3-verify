@@ -99,6 +99,10 @@ func verifyBodyListObjectsV2(resBody io.Reader, expectedList listBucketV2Result)
 		err := fmt.Errorf("Unexpected Bucket Listed: wanted %v, got %v", expectedList.Name, receivedList.Name)
 		return err
 	}
+	if receivedList.IsTruncated != expectedList.IsTruncated {
+		err := fmt.Errorf("Unexpected Truncation: wanted %v, got %v", expectedList.IsTruncated, receivedList.IsTruncated)
+		return err
+	}
 	if len(receivedList.Contents)+len(receivedList.CommonPrefixes) != len(expectedList.Contents)+len(expectedList.CommonPrefixes) {
 		err := fmt.Errorf("Unexpected Number of Objects Listed: wanted %d objects and %d prefixes, got %d objects and %d prefixes",
 			len(expectedList.Contents), len(expectedList.CommonPrefixes),
@@ -123,8 +127,9 @@ func mainListObjectsV2(config ServerConfig, curTest int, bucketName string, test
 	sort.Sort(objectInfo)
 
 	expectedList := listBucketV2Result{
-		Name:     bucketName, // List only from the first bucket created because that is the bucket holding the objects.
-		Contents: objectInfo,
+		Name:        bucketName,        // List only from the first bucket created because that is the bucket holding the objects.
+		Contents:    objectInfo[:1000], // Will only return the first 1000 objects.
+		IsTruncated: true,
 	}
 	// Create a new request.
 	req, err := newListObjectsV2Req(bucketName, nil)
@@ -151,8 +156,9 @@ func mainListObjectsV2(config ServerConfig, curTest int, bucketName string, test
 
 	// Test for listobjects with start-after parameter set.
 	expectedListStartAfter := listBucketV2Result{
-		Name:     bucketName,
-		Contents: objectInfo[31:],
+		Name:        bucketName,
+		Contents:    objectInfo[31:],
+		IsTruncated: false,
 	}
 
 	// Store the parameters.
@@ -183,9 +189,10 @@ func mainListObjectsV2(config ServerConfig, curTest int, bucketName string, test
 
 	// Test for listobjects with maxkeys parameter set.
 	expectedListMaxKeys := listBucketV2Result{
-		Name:     bucketName,
-		Contents: objectInfo[:30], // Only return the first 30 objects.
-		MaxKeys:  30,              // Only return the first 30 objects.
+		Name:        bucketName,
+		Contents:    objectInfo[:30], // Only return the first 30 objects.
+		MaxKeys:     30,              // Only return the first 30 objects.
+		IsTruncated: true,
 	}
 	// Store the parameters to be set by the request.
 	maxKeysMap := map[string]string{
@@ -220,8 +227,9 @@ func mainListObjectsV2(config ServerConfig, curTest int, bucketName string, test
 	expectedListPrefix := listBucketV2Result{
 		Name: bucketName,
 		// Should only return objects that were put during the put-object test.
-		Contents: objectInfo[1:],
-		Prefix:   "s3verify/put/object/",
+		Contents:    objectInfo[:1000], // Will only get 1000 objects after the excluded object.
+		Prefix:      "s3verify/put/object/",
+		IsTruncated: true,
 	}
 	// Store the parameters.
 	prefixMap := map[string]string{
@@ -252,12 +260,12 @@ func mainListObjectsV2(config ServerConfig, curTest int, bucketName string, test
 
 	// Test for listobjects with delimiter parameter and prefix parameter set.
 	expectedListDelimiterPrefix := listBucketV2Result{
-		Name:     bucketName,
-		Contents: []ObjectInfo{},
-		// Should return all objects.
+		Name: bucketName,
+		// Should return no objects just the prefix.
 		CommonPrefixes: []commonPrefix{commonPrefix{"s3verify/put/object/"}},
 		Prefix:         "s3verify/put/",
 		Delimiter:      "/",
+		IsTruncated:    false,
 	}
 
 	// Store the parameters.
@@ -288,18 +296,55 @@ func mainListObjectsV2(config ServerConfig, curTest int, bucketName string, test
 	// Spin scanBar
 	scanBar(message)
 
+	// Test for listobjects with max-keys set over 1000.
+	expectedListMaxKeysOver := listBucketV2Result{
+		Name: bucketName,
+		// Should return only 1000 objects.
+		Contents:    objectInfo[:1000], // Will only get 1000 objects after the excluded object.
+		IsTruncated: true,
+	}
+
+	// Store the parameters.
+	maxKeysOverMap := map[string]string{
+		"max-keys": "1001",
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Create the new request.
+	maxKeysOverReq, err := newListObjectsV2Req(bucketName, maxKeysOverMap)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+	// Execute the request.
+	maxKeysOverRes, err := config.execRequest("GET", maxKeysOverReq)
+	if err != nil {
+		printMessage(message, err)
+		return false
+	}
+	defer closeResponse(maxKeysOverRes)
+	// Verify that the max-keys parameter tops out at 1000 objects.
+	if err := listObjectsV2Verify(maxKeysOverRes, http.StatusOK, expectedListMaxKeysOver); err != nil {
+		printMessage(message, err)
+		return false
+	}
+	// Spin scanBar
+	scanBar(message)
+
 	// Test passed.
 	printMessage(message, nil)
 	return true
 }
 
-//
+// mainListObjectsV2UnPrepared - Test the ListObjects V2 API in an unprepared environment.
 func mainListObjectsV2UnPrepared(config ServerConfig, curTest int) bool {
 	bucketName := s3verifyBuckets[0].Name
 	return mainListObjectsV2(config, curTest, bucketName, s3verifyObjects)
 }
 
-//
+// mainListObjectsV2Prepared - Test the ListObjects V2 API in a prepared environment.
 func mainListObjectsV2Prepared(config ServerConfig, curTest int) bool {
 	bucketName := preparedBuckets[0].Name
 	return mainListObjectsV2(config, curTest, bucketName, preparedObjects)
