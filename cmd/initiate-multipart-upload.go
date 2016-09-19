@@ -29,13 +29,13 @@ import (
 var multipartObjects = []*ObjectInfo{
 	// An object that will have more than 5MB of data to be uploaded as part of a multipart upload.
 	&ObjectInfo{
-		Key:         "s3verify-multipart-object",
+		Key:         "s3verify/multipart/object",
 		ContentType: "application/octet-stream",
 		// Body: to be set dynamically,
 		// UploadID: to be set dynamically,
 	},
 	&ObjectInfo{
-		Key:         "s3verify-multipart-abort",
+		Key:         "s3verify/multipart/abort",
 		ContentType: "application/octet-stream",
 		// Body: to be set dynamically,
 		// UploadID: to be set dynamically,
