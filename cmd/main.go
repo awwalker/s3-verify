@@ -127,7 +127,7 @@ func callAllAPIs(ctx *cli.Context) {
 		}
 	} else if ctx.GlobalString("id") != "" { // If an id is provided assume that this is an already prepared bucket and use it as such.
 		bucketName := "s3verify-" + globalSuffix
-		console.Printf("S3verify attempting to use %s to test AWS S3 V4 signature compatibility.", bucketName)
+		console.Printf("S3verify attempting to use %s to test AWS S3 V4 signature compatibility.\n", bucketName)
 		if err := validateBucket(*config, bucketName); err != nil {
 			console.Fatalln(err)
 		}
